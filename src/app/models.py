@@ -121,6 +121,7 @@ class Plant(Base):
     __tablename__ = "plants"
 
     id = Column(Integer, primary_key=True)
+    name = Column(String)
     garden_id = Column(Integer, ForeignKey("gardens.id")) 
     species_id = Column(Integer, ForeignKey("species.id"))
 
