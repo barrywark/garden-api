@@ -1,6 +1,12 @@
-from fastapi import FastAPI
-from app.api import ping
+import fastapi
 
-app = FastAPI()
+import app.models as models
+import app.db as db
+import app.api.ping as ping
 
-app.include_router(ping.router)
+# Database setup
+models.create_all(db.ENGINE)
+
+# App setup
+app = fastapi.FastAPI()
+app.include_router(ping.router)  
