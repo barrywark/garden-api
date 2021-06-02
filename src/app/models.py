@@ -2,6 +2,7 @@
 import uuid
 
 import sqlalchemy as sql
+import sqlalchemy
 import sqlalchemy.orm as orm
 
 from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
@@ -11,7 +12,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.db import Base
 
 
-def create_all(engine):
+def create_all(engine: sqlalchemy.engine.Engine) -> None:
+    """
+    Create all tables
+    """
     Base.metadata.create_all(bind=engine)
 
 
@@ -26,7 +30,7 @@ class GUID(TypeDecorator):
     cache_ok = True
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(UUID())
         else:
             return dialect.type_descriptor(CHAR(32))
@@ -34,7 +38,7 @@ class GUID(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
-        elif dialect.name == 'postgresql':
+        elif dialect.name == "postgresql":
             return str(value)
         else:
             if not isinstance(value, uuid.UUID):
@@ -53,24 +57,24 @@ class GUID(TypeDecorator):
 
 ## Users and Teams
 class UserTeam(Base):
-    __tablename__ = 'users_teams'
+    __tablename__ = "users_teams"
     id = Column(Integer, primary_key=True)
 
-    roles = Column(String) # Enum 'admin'|'member'
-    user_id = Column(GUID(), ForeignKey('users.id'))
-    team_id = Column(GUID(), ForeignKey('teams.id'))
+    roles = Column(String) # Enum "admin"|"member"
+    user_id = Column(GUID(), ForeignKey("users.id"))
+    team_id = Column(GUID(), ForeignKey("teams.id"))
 
 
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     email = Column(String)
     fullname = Column(String)
     guid = GUID()
 
-    UniqueConstraint('email', name='user_email_idx')
-    UniqueConstraint('guid', name='user_guid_idx')
+    UniqueConstraint("email", name="user_email_idx")
+    UniqueConstraint("guid", name="user_guid_idx")
 
     teams = orm.relationship("Team",
                     secondary="users_teams",
@@ -83,12 +87,13 @@ class User(Base):
 
 
 class Team(Base):
-    __tablename__ = 'teams'
+    __tablename__ = "teams"
     id = Column(Integer, primary_key=True)
     name = Column(String)
     guid = GUID()
 
     # members created via User.teams backref
+    gardens = orm.relationship("Garden", order_by="Garden.id", back_populates="team")
 
     def __repr__(self) -> str:
         return f"Team(id={self.id!r}, guid={self.guid!r}, name={self.name!r})"
@@ -97,10 +102,35 @@ class Team(Base):
 
 ## Business Model
 class Garden(Base):
-    __tablename__ = 'gardens'
+    __tablename__ = "gardens"
 
     id = Column(Integer, primary_key=True)
     guid = GUID()
+    team_id = Column(Integer, ForeignKey("teams.id"))
+
+    team = orm.relationship("Team", back_populates="gardens")
+    plants = orm.relationship("Plant", back_populates="garden")
+
+    UniqueConstraint("guid", name="user_guid_idx")
 
     def __repr__(self) -> str:
         return f"Garden(id={self.id!r}, guid={self.guid!r})"
+
+
+class Plant(Base):
+    __tablename__ = "plants"
+
+    id = Column(Integer, primary_key=True)
+    garden_id = Column(Integer, ForeignKey("gardens.id")) 
+    species_id = Column(Integer, ForeignKey("species.id"))
+
+    garden = orm.relationship("Garden", back_populates="plants")
+    species = orm.relationship("Species")
+
+
+class Species(Base):
+    __tablename__ = "species"
+
+    id = Column(Integer, primary_key=True)
+
+    
