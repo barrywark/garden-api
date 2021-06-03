@@ -15,7 +15,7 @@ _SESSION_MAKER = orm.sessionmaker(autocommit=False, autoflush=False, bind=ENGINE
 
 Base = declarative_base()
 
-def get_db():
+def get_db() -> orm.Session:
     """
     Dependency -> SQLAlchemy `Session`. Usage:
         import fastapi

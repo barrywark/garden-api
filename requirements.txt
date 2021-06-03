@@ -8,6 +8,7 @@ uvicorn
 
 # plugins
 fastapi-crudrouter
+fastapi-security
 
 # dev
 pytest

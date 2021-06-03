@@ -6,6 +6,7 @@ import sqlalchemy
 import sqlalchemy.orm as orm
 
 from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
+from sqlalchemy.sql.sqltypes import INTEGER
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -60,21 +61,17 @@ class UserTeam(Base):
     __tablename__ = "users_teams"
     id = Column(Integer, primary_key=True)
 
-    roles = Column(String) # Enum "admin"|"member"
-    user_id = Column(GUID(), ForeignKey("users.id"))
-    team_id = Column(GUID(), ForeignKey("teams.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    team_id = Column(Integer, ForeignKey("teams.id"))
 
 
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
-    email = Column(String)
+    email = Column(String, unique=True)
     fullname = Column(String)
-    guid = GUID()
-
-    UniqueConstraint("email", name="user_email_idx")
-    UniqueConstraint("guid", name="user_guid_idx")
+    guid = Column(GUID(), default=uuid.uuid4, unique=True)
 
     teams = orm.relationship("Team",
                     secondary="users_teams",
@@ -90,9 +87,11 @@ class Team(Base):
     __tablename__ = "teams"
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    guid = GUID()
+    guid = Column(GUID(), default=uuid.uuid4, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     # members created via User.teams backref
+    owner = orm.relationship("User")
     gardens = orm.relationship("Garden", order_by="Garden.id", back_populates="team")
 
     def __repr__(self) -> str:
@@ -105,13 +104,12 @@ class Garden(Base):
     __tablename__ = "gardens"
 
     id = Column(Integer, primary_key=True)
-    guid = GUID()
+    guid = Column(GUID(), default=uuid.uuid4, unique=True)
     team_id = Column(Integer, ForeignKey("teams.id"))
 
     team = orm.relationship("Team", back_populates="gardens")
     plants = orm.relationship("Plant", back_populates="garden")
 
-    UniqueConstraint("guid", name="user_guid_idx")
 
     def __repr__(self) -> str:
         return f"Garden(id={self.id!r}, guid={self.guid!r})"

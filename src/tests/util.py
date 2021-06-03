@@ -22,6 +22,7 @@ def session() -> Session:
     with _SESSION_MAKER() as session:
         db.Base.metadata.create_all(ENGINE)
         yield session
+        db.Base.metadata.drop_all(ENGINE)
     
 
 @pytest.fixture
