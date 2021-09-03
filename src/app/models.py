@@ -11,6 +11,12 @@ from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
+import app.schemas as sk
+
+import fastapi_users
+
+class User(sk.User, fastapi_users.models.BaseUserDB):
+    pass
 
 
 def create_all(engine: sqlalchemy.engine.Engine) -> None:
@@ -64,33 +70,16 @@ class UserTeam(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     team_id = Column(Integer, ForeignKey("teams.id"))
 
-
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
-    fullname = Column(String)
-    guid = Column(GUID(), default=uuid.uuid4, unique=True)
-
-    teams = orm.relationship("Team",
-                    secondary="users_teams",
-                    backref="members")
-
-
-    def __repr__(self):
-        return f"User(id={self.id!r}, guid={self.guid}, fullname={self.fullname!r}, email={self.email!r})"
-
-
-
 class Team(Base):
     __tablename__ = "teams"
     id = Column(Integer, primary_key=True)
     name = Column(String)
     guid = Column(GUID(), default=uuid.uuid4, unique=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
-    # members created via User.teams backref
+    members = orm.relationship("User",
+                                secondary="users_teams",
+                                back_populates="teams")
     owner = orm.relationship("User")
     gardens = orm.relationship("Garden", order_by="Garden.id", back_populates="team")
 

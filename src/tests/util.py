@@ -13,16 +13,19 @@ import app.db as db
 from app.main import app
 
 # For testing, we use an in-memory database
-ENGINE = create_engine("sqlite+pysqlite:///:memory:", connect_args={"check_same_thread": False})
+_ENGINE = create_engine("sqlite+pysqlite:///:memory:", connect_args={"check_same_thread": False})
 
-_SESSION_MAKER = sessionmaker(autocommit=False, autoflush=False, bind=ENGINE)
+_SESSION_MAKER = sessionmaker(autocommit=False, autoflush=False, bind=_ENGINE)
 
 @pytest.fixture
 def session() -> Session:
-    with _SESSION_MAKER() as session:
-        db.Base.metadata.create_all(ENGINE)
-        yield session
-        db.Base.metadata.drop_all(ENGINE)
+    try:
+        db.Base.metadata.create_all(_ENGINE)
+
+        session_db = _SESSION_MAKER()
+        yield session_db
+    finally:
+        db.Base.metadata.drop_all(_ENGINE)
     
 
 @pytest.fixture

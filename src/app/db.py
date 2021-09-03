@@ -2,12 +2,14 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
+from settings import get_settings
+
 import sqlalchemy.orm as orm
 
 
 # TODO
 #"postgresql://user:password@postgresserver/db"
-_SQLALCHEMY_DATABASE_URL = os.environ["DATABASE_URL"] if "DATABASE_URL" in os.environ else "sqlite:///./gardenapi.db"
+_SQLALCHEMY_DATABASE_URL = get_settings().database_url or  "sqlite:///./gardenapi.db"
 
 ENGINE = create_engine(_SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 
