@@ -1,9 +1,7 @@
 {
     "python.testing.pytestArgs": [
-        "src"
+        "."
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.pythonPath": "/Users/barry/opt/anaconda3/envs/gardenapi/bin/python"
+    "python.testing.pytestEnabled": true
 }

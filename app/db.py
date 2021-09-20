@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
-from settings import get_settings
+from app.settings import get_settings
 
 import sqlalchemy.orm as orm
 
