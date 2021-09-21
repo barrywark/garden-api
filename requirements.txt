@@ -1,6 +1,10 @@
 # database
 psycopg2-binary
 SQLAlchemy
+sqlmodel
+
+# auth
+authlib
 
 # API Server
 fastapi[all]

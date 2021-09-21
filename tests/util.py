@@ -4,36 +4,31 @@ import pytest
 
 from starlette.testclient import TestClient
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-
+import sqlmodel as sql
 import app.db as db
+import app.models as models
+
 from app.main import app
 
-# For testing, we use an in-memory database
-_ENGINE = create_engine("sqlite+pysqlite:///:memory:", connect_args={"check_same_thread": False})
+_SQLALCHEMY_DATABASE_URL = "sqlite+pysqlite:///:memory:"
 
-_SESSION_MAKER = sessionmaker(autocommit=False, autoflush=False, bind=_ENGINE)
+_ENGINE = sql.create_engine(_SQLALCHEMY_DATABASE_URL)
 
 @pytest.fixture
-def session() -> Session:
+def session(engine=db.ENGINE) -> sql.Session:
     try:
-        db.Base.metadata.create_all(_ENGINE)
-
-        session_db = _SESSION_MAKER()
-        yield session_db
+        models.create_all(engine)
+        yield db.get_session(engine=engine)
     finally:
-        db.Base.metadata.drop_all(_ENGINE)
+        models.drop_all(engine)
     
 
 @pytest.fixture
 def client() -> TestClient:
     def _get_db_override():
-        return session()
+        return session(engine=_ENGINE)
 
-    app.dependency_overrides[db.get_db] = _get_db_override
+    app.dependency_overrides[db.get_session] = _get_db_override
 
     return TestClient(app)
 

@@ -1,35 +1,32 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 
 from app.settings import get_settings
 
-import sqlalchemy.orm as orm
+import sqlmodel as sql
 
 
 # TODO
 #"postgresql://user:password@postgresserver/db"
-_SQLALCHEMY_DATABASE_URL = get_settings().database_url or  "sqlite:///./gardenapi.db"
+_SQLALCHEMY_DATABASE_URL = get_settings().database_url or  "sqlite+pysqlite:///:memory:"
 
-ENGINE = create_engine(_SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+ENGINE = sql.create_engine(_SQLALCHEMY_DATABASE_URL)
 
-_SESSION_MAKER = orm.sessionmaker(autocommit=False, autoflush=False, bind=ENGINE)
+Base = sql.SQLModel
+Session = sql.Session
 
-Base = declarative_base()
-
-def get_db() -> orm.Session:
+def get_session(engine=ENGINE) -> sql.Session:
     """
     Dependency -> SQLAlchemy `Session`. Usage:
         import fastapi
         import app.db as db
-        import sqlalchemy.orm as orm
+        import sqlmodel as sql
         
         @app.post("/foo/", response_model=schemas.Foo)
-        def create_foo(foo: schemas.Foo, db: orm.Session = fastapi.Depends(db.get_db)):
+        def create_foo(foo: schemas.Foo, db: sql.Session = fastapi.Depends(db.get_session)):
             # Use db
             pass
     """
 
-    with _SESSION_MAKER() as session:
+    with sql.Session(ENGINE) as session:
         yield session
 

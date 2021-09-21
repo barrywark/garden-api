@@ -1,22 +1,24 @@
 
 import uuid
 
-import sqlalchemy as sql
 import sqlalchemy
+import sqlmodel as sql
 import sqlalchemy.orm as orm
 
-from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
-from sqlalchemy.sql.sqltypes import INTEGER
+# from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
+# from sqlalchemy.sql.sqltypes import INTEGER
 from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
+# from sqlalchemy.dialects.postgresql import UUID
+
+from typing import Optional, List
 
 from app.db import Base
-import app.schemas as sk
+# import app.schemas as sk
 
-import fastapi_users
+# import fastapi_users
 
-class User(sk.User, fastapi_users.models.BaseUserDB):
-    pass
+# class User(sk.User, fastapi_users.models.BaseUserDB):
+#     pass
 
 
 def create_all(engine: sqlalchemy.engine.Engine) -> None:
@@ -24,6 +26,14 @@ def create_all(engine: sqlalchemy.engine.Engine) -> None:
     Create all tables
     """
     Base.metadata.create_all(bind=engine)
+
+
+def drop_all(engine: sqlalchemy.engine.Engine) -> None:
+    """
+    !!Drop all the tables!!
+    """
+
+    Base.metadata.drop_all(bind=engine)
 
 
 class GUID(TypeDecorator):
@@ -38,7 +48,7 @@ class GUID(TypeDecorator):
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
-            return dialect.type_descriptor(UUID())
+            return dialect.type_descriptor(uuid.UUID())
         else:
             return dialect.type_descriptor(CHAR(32))
 
@@ -63,62 +73,37 @@ class GUID(TypeDecorator):
             return value
 
 ## Users and Teams
-class UserTeam(Base):
-    __tablename__ = "users_teams"
-    id = Column(Integer, primary_key=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"))
-    team_id = Column(Integer, ForeignKey("teams.id"))
+class User(Base, tabel=True):
+    id: Optional[int] = sql.Field(default=None, primary_key=True)
+    full_name: Optional[str] = None
+    username: str
 
-class Team(Base):
-    __tablename__ = "teams"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    guid = Column(GUID(), default=uuid.uuid4, unique=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    gardens: List["Garden"] = sql.Relationship(back_populates="owner")
+    species: List["Species"] = sql.Relationship(back_populates="owner")
+    plants: List["Plant"] = sql.Relationship(back_populates="owner")
 
-    members = orm.relationship("User",
-                                secondary="users_teams",
-                                back_populates="teams")
-    owner = orm.relationship("User")
-    gardens = orm.relationship("Garden", order_by="Garden.id", back_populates="team")
+# ## Business Model
+class GardenBase(Base):
+    name: str
 
-    def __repr__(self) -> str:
-        return f"Team(id={self.id!r}, guid={self.guid!r}, name={self.name!r})"
+class Garden(GardenBase, tabel=True):
+    id: Optional[int] = sql.Field(default=None, primary_key=True)
 
+    owner: User = sql.Relationship(back_populates="gardens")
+    plants: List["Plant"] = sql.Relationship(back_populates="gardens")
 
+class Species(Base, tabel=True):
+    id: Optional[int] = sql.Field(default=None, primary_key=True)
+    name: str
 
-## Business Model
-class Garden(Base):
-    __tablename__ = "gardens"
-
-    id = Column(Integer, primary_key=True)
-    guid = Column(GUID(), default=uuid.uuid4, unique=True)
-    team_id = Column(Integer, ForeignKey("teams.id"))
-
-    team = orm.relationship("Team", back_populates="gardens")
-    plants = orm.relationship("Plant", back_populates="garden")
+    owner: User = sql.Relationship(back_populates="species")
 
 
-    def __repr__(self) -> str:
-        return f"Garden(id={self.id!r}, guid={self.guid!r})"
+class Plant(Base, tabel=True):
+    id: Optional[int] = sql.Field(default=None, primary_key=True)
+    name: str
 
-
-class Plant(Base):
-    __tablename__ = "plants"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    garden_id = Column(Integer, ForeignKey("gardens.id")) 
-    species_id = Column(Integer, ForeignKey("species.id"))
-
-    garden = orm.relationship("Garden", back_populates="plants")
-    species = orm.relationship("Species")
-
-
-class Species(Base):
-    __tablename__ = "species"
-
-    id = Column(Integer, primary_key=True)
-
-    
+    species: Species = sql.Relationship()
+    gardens: List[Garden] = sql.Relationship(back_populates="plants")
+    owner: User = sql.Relationship(back_populates="plants")
