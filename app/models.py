@@ -5,27 +5,19 @@ import sqlalchemy
 import sqlmodel as sql
 import sqlalchemy.orm as orm
 
-# from sqlalchemy import Column, String, Integer, ForeignKey, UniqueConstraint
-# from sqlalchemy.sql.sqltypes import INTEGER
 from sqlalchemy.types import TypeDecorator, CHAR
-# from sqlalchemy.dialects.postgresql import UUID
 
 from typing import Optional, List
 
 from app.db import Base
-# import app.schemas as sk
 
-# import fastapi_users
-
-# class User(sk.User, fastapi_users.models.BaseUserDB):
-#     pass
 
 
 def create_all(engine: sqlalchemy.engine.Engine) -> None:
     """
     Create all tables
     """
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(engine)
 
 
 def drop_all(engine: sqlalchemy.engine.Engine) -> None:
@@ -33,7 +25,7 @@ def drop_all(engine: sqlalchemy.engine.Engine) -> None:
     !!Drop all the tables!!
     """
 
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(engine)
 
 
 class GUID(TypeDecorator):
@@ -74,36 +66,40 @@ class GUID(TypeDecorator):
 
 ## Users and Teams
 
-class User(Base, tabel=True):
+class User(Base, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True)
     full_name: Optional[str] = None
     username: str
 
-    gardens: List["Garden"] = sql.Relationship(back_populates="owner")
+    #gardens: List["Garden"] = sql.Relationship(back_populates="owner")
     species: List["Species"] = sql.Relationship(back_populates="owner")
-    plants: List["Plant"] = sql.Relationship(back_populates="owner")
+    #plants: List["Plant"] = sql.Relationship(back_populates="owner")
 
 # ## Business Model
 class GardenBase(Base):
     name: str
 
-class Garden(GardenBase, tabel=True):
+class Garden(GardenBase, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True)
 
-    owner: User = sql.Relationship(back_populates="gardens")
-    plants: List["Plant"] = sql.Relationship(back_populates="gardens")
+    #owner: User = sql.Relationship(back_populates="gardens")
+    #plants: List["Plant"] = sql.Relationship(back_populates="gardens")
 
-class Species(Base, tabel=True):
+class NewSpecies(Base):
+    name: str
+
+class Species(NewSpecies, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True)
     name: str
 
+    owner_id: int = sql.Field(default=None, foreign_key="user.id")
     owner: User = sql.Relationship(back_populates="species")
 
 
-class Plant(Base, tabel=True):
+class Plant(Base, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True)
     name: str
 
-    species: Species = sql.Relationship()
-    gardens: List[Garden] = sql.Relationship(back_populates="plants")
-    owner: User = sql.Relationship(back_populates="plants")
+    #species: Species = sql.Relationship()
+    #gardens: List[Garden] = sql.Relationship(back_populates="plants")
+    #owner: User = sql.Relationship(back_populates="plants")
