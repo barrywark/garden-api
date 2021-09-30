@@ -4,7 +4,7 @@ SQLAlchemy
 sqlmodel
 
 # auth
-okta-jwt
+authlib
 oso
 sqlalchemy-oso
 
@@ -14,6 +14,9 @@ uvicorn
 
 # plugins
 fastapi-crudrouter
+
+# utils
+httpx
 
 # dev
 pytest

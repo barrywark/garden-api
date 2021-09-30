@@ -28,6 +28,9 @@ def drop_all(engine: sqlalchemy.engine.Engine) -> None:
     Base.metadata.drop_all(engine)
 
 
+class AuthToken(Base, table=False):
+    token: str
+
 class GUID(TypeDecorator):
     """Platform-independent GUID type.
 
@@ -66,10 +69,13 @@ class GUID(TypeDecorator):
 
 ## Users and Teams
 
-class User(Base, table=True):
-    id: Optional[int] = sql.Field(default=None, primary_key=True)
+class UserBase(Base):
     full_name: Optional[str] = None
-    username: str
+    email: str
+
+
+class User(UserBase, table=True):
+    id: Optional[int] = sql.Field(default=None, primary_key=True)
 
     #gardens: List["Garden"] = sql.Relationship(back_populates="owner")
     species: List["Species"] = sql.Relationship(back_populates="owner")
