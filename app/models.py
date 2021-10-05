@@ -30,6 +30,7 @@ def drop_all(engine: sqlalchemy.engine.Engine) -> None:
 
 class AuthToken(Base, table=False):
     token: str
+    token_type: str
 
 class GUID(TypeDecorator):
     """Platform-independent GUID type.

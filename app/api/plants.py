@@ -29,19 +29,26 @@ def make_router(oso: oso.Oso) -> fastapi.APIRouter:
     router = fastapi.APIRouter()
 
     @router.post("/species", status_code=fastapi.status.HTTP_201_CREATED, response_model=m.Species)
-    async def create_species(request: fastapi.Request, new_species: m.NewSpecies, session: db.Session = fastapi.Depends(db.get_session)):
+    async def create_species(request: fastapi.Request, 
+                             new_species: m.NewSpecies, 
+                             user: m.User = fastapi.Depends(auth.current_user), 
+                             session: db.Session = fastapi.Depends(auth.make_oso_authorized_db(oso))):
         # if not oso.is_allowed(request.state.user, "create", new_species):
         #     raise fastapi.HTTPException(403)
         
         return _create_species(session, new_species=new_species)
 
     @router.get("/species", response_model=list[m.Species])
-    async def get_species(request: fastapi.Request, session: db.Session = fastapi.Depends(db.get_session)):
+    async def get_species(request: fastapi.Request, 
+                          user: m.User = fastapi.Depends(auth.current_user), 
+                          session: db.Session = fastapi.Depends(auth.make_oso_authorized_db(oso))):
         return _get_species(session)
 
 
     @router.get("/species/{id}", response_model=m.Species)
-    async def get_species_id(request: fastapi.Request, id: int, session: db.Session = fastapi.Depends(db.get_session)):
+    async def get_species_id(request: fastapi.Request, 
+                             id: int, user: m.User = fastapi.Depends(auth.current_user), 
+                             session: db.Session = fastapi.Depends(auth.make_oso_authorized_db(oso))):
         s = _get_species_idx(session, id)
         if s is None:
             raise fastapi.HTTPException(fastapi.status.HTTP_404_NOT_FOUND)

@@ -14,6 +14,7 @@ from authlib.integrations.starlette_client import OAuth
 from fastapi import HTTPException, Header, Request, Depends
 from typing import Optional
 from authlib.jose import jwt
+from fastapi.security import OpenIdConnect
 
 conf = app.settings.get_env_config()
 _issuer, _audience = conf("ISSUER"), conf("AUDIENCE")
@@ -29,9 +30,10 @@ oauth.register(
     }
 )
 
+oauth2_scheme = OpenIdConnect(openIdConnectUrl=CONF_URL)
 
 ## Authorized DB Session
-def make_get_authorized_db(oso: oso.Oso = None, engine: sqlalchemy.engine.Engine = app.db.ENGINE):
+def make_oso_authorized_db(oso: oso.Oso = None, engine: sqlalchemy.engine.Engine = app.db.ENGINE):
     def get_authorized_db(request: fastapi.Request):
         sessionmaker = sqloso.authorized_sessionmaker(lambda: oso, 
                                                     lambda: request.state.user,
@@ -48,17 +50,8 @@ _PRIVATE_PEM = conf("JWT_PRIVATE_PEM")
 _PUBLIC_PEM = conf("JWT_PUBLIC_PEM")
 
 ## Authentication
-def _get_token(authorization: Optional[str] = Header(None)) -> str:
-    if not authorization:
-        raise HTTPException(403, "Missing 'Authorization' header.")
-    try:
-        return authorization.split()[1]
-    except IndexError:
-        raise HTTPException(403, "Malformed 'Authorization' header.")
-
-        
 def current_user(request: Request, 
-                token: str = Depends(_get_token), 
+                token: str = Depends(oauth2_scheme),
                 db: app.db.Session = Depends(app.db.get_session)):
     try:
         claims = jwt.decode(token, _PUBLIC_PEM)
@@ -83,7 +76,6 @@ async def login(request: Request):
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
-_OAUTH_USER_SESSION_KEY = 'oauth-user'
 @router.api_route('/auth', methods=['GET', 'POST'], response_model=app.models.AuthToken)
 async def auth(request: Request, db: app.db.Session = Depends(app.db.get_session)) -> app.models.AuthToken:
     # Perform Google OAuth
@@ -97,7 +89,7 @@ async def auth(request: Request, db: app.db.Session = Depends(app.db.get_session
     # Generate and return our JWT
     auth_token = _make_token(db, user.email)
 
-    return app.models.AuthToken(token=auth_token)
+    return app.models.AuthToken(token=auth_token, token_type="Bearer")
 
 
 @router.get('/token', response_model=app.models.AuthToken, tags=['authentication'])
@@ -105,8 +97,10 @@ async def refresh(user: app.models.User = Depends(current_user), db: app.db.Sess
     user_email = dict(user).get('sub')
     auth_token = _make_token(db, user_email)
 
-    return app.models.AuthToken(token=auth_token)
+    return app.models.AuthToken(token=auth_token, token_type="Bearer")
 
+
+_OAUTH_USER_SESSION_KEY = 'oauth-user'
 
 @router.get('/logout', tags=['authentication'])  # Tag it as "authentication" for our docs
 async def logout(request: Request):
@@ -120,7 +114,7 @@ async def logout(request: Request):
 
 def _make_token(db, user_email):
     header = {'alg': 'RS256'}
-    payload = {'iss': _issuer, 'aud': _audience, 'sub': user.email} #TODO iat
+    payload = {'iss': _issuer, 'aud': _audience, 'sub': user_email} #TODO iat
 
     auth_token = jwt.encode(header, payload, _PRIVATE_PEM)
 
