@@ -6,7 +6,7 @@ import app.settings
 import app.models
 
 import sqlmodel as sql
-import sqlalchemy_oso as sqloso
+import sqlalchemy_oso.session as sqloso
 import app.models as m
 import starlette.responses as responses
 
@@ -32,13 +32,20 @@ oauth.register(
 
 oauth2_scheme = OpenIdConnect(openIdConnectUrl=CONF_URL)
 
+READ_ACTION = "read"
+WRITE_ACTION = "write"
+
 ## Authorized DB Session
-def make_oso_authorized_db(oso: oso.Oso = None, engine: sqlalchemy.engine.Engine = app.db.ENGINE):
-    def get_authorized_db(request: fastapi.Request):
-        sessionmaker = sqloso.authorized_sessionmaker(lambda: oso, 
-                                                    lambda: request.state.user,
-                                                    lambda: request.scope["endpoint"].__name__, 
-                                                    bind=engine)
+def make_oso_authorized_db(oso_instance: oso.Oso = None, 
+                            action: str = READ_ACTION):
+                            
+    def get_authorized_db(request: fastapi.Request, 
+                            engine: sqlalchemy.engine.Engine = fastapi.Depends(app.db.get_engine)):
+        sessionmaker = sqloso.authorized_sessionmaker(get_oso = lambda: oso_instance, 
+                                                        get_user = lambda: request.state.user,
+                                                        get_checked_permissions = lambda: {  m.User: action,
+                                                                                            m.Species: action}, 
+                                                        bind=engine)
         with sessionmaker() as session:
             yield session
     
@@ -52,14 +59,16 @@ _PUBLIC_PEM = conf("JWT_PUBLIC_PEM")
 ## Authentication
 def current_user(request: Request, 
                 token: str = Depends(oauth2_scheme),
-                db: app.db.Session = Depends(app.db.get_session)):
+                session: app.db.Session = Depends(app.db.get_session)):
     try:
         claims = jwt.decode(token, _PUBLIC_PEM)
         claims.validate()
         
         email = claims["sub"]
 
-        request.state.user = _get_or_create_user_by_email(db, email) # TODO does `request.state` survive across requests?
+        u = _get_or_create_user_by_email(session, email)
+
+        request.state.user = m.SerializedUser(email=email, id=u.id)
 
         return request.state.user
     except Exception as e:
@@ -77,25 +86,24 @@ async def login(request: Request):
 
 
 @router.api_route('/auth', methods=['GET', 'POST'], response_model=app.models.AuthToken)
-async def auth(request: Request, db: app.db.Session = Depends(app.db.get_session)) -> app.models.AuthToken:
+async def auth(request: Request, session: app.db.Session = Depends(app.db.get_session)) -> app.models.AuthToken:
     # Perform Google OAuth
     token = await oauth.google.authorize_access_token(request)
     user = await oauth.google.parse_id_token(request, token)
 
     # Save the user
     user_email = dict(user).get('sub')
-    user = _get_or_create_user_by_email(db, user_email)
+    user = _get_or_create_user_by_email(session, user_email)
 
     # Generate and return our JWT
-    auth_token = _make_token(db, user.email)
+    auth_token = _make_token(user.email)
 
     return app.models.AuthToken(token=auth_token, token_type="Bearer")
 
 
 @router.get('/token', response_model=app.models.AuthToken, tags=['authentication'])
-async def refresh(user: app.models.User = Depends(current_user), db: app.db.Session = Depends(app.db.get_session)) -> app.models.AuthToken:
-    user_email = dict(user).get('sub')
-    auth_token = _make_token(db, user_email)
+async def refresh(user: app.models.SerializedUser = Depends(current_user), session: app.db.Session = Depends(app.db.get_session)) -> app.models.AuthToken:
+    auth_token = _make_token(user.email)
 
     return app.models.AuthToken(token=auth_token, token_type="Bearer")
 
@@ -112,7 +120,7 @@ async def logout(request: Request):
     return responses.RedirectResponse(url='/')
 
 
-def _make_token(db, user_email):
+def _make_token(user_email):
     header = {'alg': 'RS256'}
     payload = {'iss': _issuer, 'aud': _audience, 'sub': user_email} #TODO iat
 
@@ -121,18 +129,18 @@ def _make_token(db, user_email):
     return auth_token
 
 
-def _get_or_create_user_by_email(db: app.db.Session, email: str) -> m.User:
-    user = db.query(m.User).filter(m.User.email == email).first()
+def _get_or_create_user_by_email(session: app.db.Session, email: str) -> m.User:
+    user = session.query(m.User).filter(m.User.email == email).first()
     if user:
         return user
-    return _create_user(db, m.UserBase(email=email))
+    return _create_user(session, m.UserBase(email=email))
 
 
-def _create_user(db: app.db.Session, user: m.UserBase) -> m.User:
+def _create_user(session: app.db.Session, user: m.UserBase) -> m.SerializedUser:
     db_user = m.User(email=user.email)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
 
-    return db_user
+    return m.SerializedUser(email=user.email, id=db_user.id)
 

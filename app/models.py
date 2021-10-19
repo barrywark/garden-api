@@ -1,14 +1,10 @@
-
 import uuid
 
 import sqlalchemy
 import sqlmodel as sql
-import sqlalchemy.orm as orm
 
 from sqlalchemy.types import TypeDecorator, CHAR
-
 from typing import Optional, List
-
 from app.db import Base
 
 
@@ -81,6 +77,10 @@ class User(UserBase, table=True):
     #gardens: List["Garden"] = sql.Relationship(back_populates="owner")
     species: List["Species"] = sql.Relationship(back_populates="owner")
     #plants: List["Plant"] = sql.Relationship(back_populates="owner")
+
+class SerializedUser(Base, table=False):
+    id: int
+    email: str
 
 # ## Business Model
 class GardenBase(Base):

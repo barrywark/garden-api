@@ -41,7 +41,8 @@ def test_get_species_with_no_user(unauthenticated_client, client):
     assert create_response.status_code == 201
 
     response = unauthenticated_client.get("/species")
-    assert response.status_code == 403
+    assert response.status_code == 200
+    assert len(response.json()) == 0
 
 
 def test_get_species_by_id(client):

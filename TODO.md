@@ -1,15 +1,12 @@
-[x] Use fastapi-users[sqlalchemy,oauth]
-* Replace `models.User`
-* `teams.make_router` – current user dependency
+[x] Google OAuth (only)
 
-[ ] Google OAuth (only)
+[x] oso config
 
-[ ] Teams API
-
-[ ] *Test*
-
-[ ] Admin plugin
+[x] test util for sqloso: add app dependency for db.ENGINE, use dependency from caller of make_oso_authorized_db
 
 [ ] Gardens API
+    [ ] Species
+
+[ ] Admin plugin
 
 [ ] Calendar

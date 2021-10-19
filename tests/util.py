@@ -24,33 +24,50 @@ def _test_db_session() -> sql.Session:
     finally:
         models.drop_all(_ENGINE)
 
-def _authenticated_current_user() -> models.User:
-    with sql.Session(_ENGINE) as session:
-        auth_user = models.User(email="authenticated@test.com")
-        session.add(auth_user)
-        session.commit()
-        session.refresh(auth_user)
+AUTH_EMAIL="authenticated@test.com"
 
-        return auth_user
+
+def _authenticated_current_user(the_user: models.User):
+    def _current_user(request: fastapi.Request) -> models.User:
     
+        request.state.user = the_user
+
+        return request.state.user
+
+    return _current_user
+
+
 def _unauthenticated_current_user() -> models.User:
     raise fastapi.HTTPException(403)
 
 
 
+def _make_user() -> models.User:
+    with sql.Session(_ENGINE) as session:
+        return auth._get_or_create_user_by_email(session, AUTH_EMAIL)
+    
+
 @pytest.fixture
 def client() -> TestClient:
+    try:
+        models.create_all(_ENGINE)
+        
+        app.dependency_overrides[auth.current_user] = _authenticated_current_user(_make_user())
+        app.dependency_overrides[db.get_engine] = lambda: _ENGINE
 
-    app.dependency_overrides[db.get_session] = _test_db_session
-    app.dependency_overrides[auth.current_user] = _authenticated_current_user
-
-    return TestClient(app)
+        yield TestClient(app)
+    finally:
+        models.drop_all(_ENGINE)
 
 
 @pytest.fixture
 def unauthenticated_client() -> TestClient:
+    try:
+        #models.create_all(_ENGINE)
+        app.dependency_overrides[db.get_engine] = lambda: _ENGINE
+        app.dependency_overrides[auth.current_user] = _unauthenticated_current_user
 
-    app.dependency_overrides[db.get_session] = _test_db_session
-    app.dependency_overrides[auth.current_user] = _unauthenticated_current_user
-
-    return TestClient(app)
+        yield TestClient(app)
+    finally:
+        # models.drop_all(_ENGINE)
+        pass
