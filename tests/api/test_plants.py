@@ -1,20 +1,11 @@
 import pytest
 
 import app.models as models
-import app.db as db
-import app.api.plants as plants
 
-from tests.util import client, unauthenticated_client
-
-from unittest.mock import sentinel
-
-# @pytest.fixture
-# def user(session: db.Session) -> models.User:
-#     user = models.User(username='fixture')
-#     session.add(user)
-#     return user
+from tests.util import make_user
 
 
+@pytest.mark.usefixtures("db_tables")
 def test_create_species_with_active_user(client):
     response = client.post("/species", json={"name": "new species"})
     assert response.status_code == 201
@@ -22,11 +13,13 @@ def test_create_species_with_active_user(client):
     assert response.json().get('id') is not None
 
 
+@pytest.mark.usefixtures("db_tables")
 def test_create_species_no_user(unauthenticated_client):
     response = unauthenticated_client.post("/species", json={"name": "new species"})
     assert response.status_code == 403
 
 
+@pytest.mark.usefixtures("db_tables")
 def test_get_species_with_active_user(client):
     create_response = client.post("/species", json={"name": "new species"})
     assert create_response.status_code == 201
@@ -36,15 +29,18 @@ def test_get_species_with_active_user(client):
     assert response.json()[0]['name'] == "new species"
     assert response.json()[0].get('id') is not None
 
-def test_get_species_with_no_user(unauthenticated_client, client):
-    create_response = client.post("/species", json={"name": "new species"})
-    assert create_response.status_code == 201
+@pytest.mark.usefixtures("db_tables")
+def test_get_species_with_no_user(unauthenticated_client, fixture_db_session):
+    u = make_user(session=fixture_db_session)
+    owner = fixture_db_session.get(models.User, u.id)
+    fixture_db_session.add(models.Species(name="test species", owner=owner))
+    fixture_db_session.commit()
 
     response = unauthenticated_client.get("/species")
-    assert response.status_code == 200
-    assert len(response.json()) == 0
+    assert response.status_code == 403
 
 
+@pytest.mark.usefixtures("db_tables")
 def test_get_species_by_id(client):
     create_response = client.post("/species", json={"name": "new species"})
     assert create_response.status_code == 201

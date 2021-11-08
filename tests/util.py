@@ -14,16 +14,6 @@ _SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
 _ENGINE = sql.create_engine(_SQLALCHEMY_DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
 
-
-def _test_db_session() -> sql.Session:
-    try:
-        print("CREATING TABLES")
-        models.create_all(_ENGINE)
-        with sql.Session(_ENGINE) as session:
-            yield session
-    finally:
-        models.drop_all(_ENGINE)
-
 AUTH_EMAIL="authenticated@test.com"
 
 
@@ -42,32 +32,40 @@ def _unauthenticated_current_user() -> models.User:
 
 
 
-def _make_user() -> models.User:
+def _make_user() -> models.SerializedUser:
     with sql.Session(_ENGINE) as session:
         return auth._get_or_create_user_by_email(session, AUTH_EMAIL)
-    
+
+def make_user(email: str = AUTH_EMAIL, session: sql.Session=None) -> models.SerializedUser:
+    return auth._get_or_create_user_by_email(session, email)
+
 
 @pytest.fixture
-def client() -> TestClient:
+def fixture_db_session() -> sql.Session:
+    with sql.Session(_ENGINE) as session:
+        yield session
+
+
+@pytest.fixture
+def db_tables():
     try:
         models.create_all(_ENGINE)
-        
-        app.dependency_overrides[auth.current_user] = _authenticated_current_user(_make_user())
-        app.dependency_overrides[db.get_engine] = lambda: _ENGINE
-
-        yield TestClient(app)
+        yield
     finally:
         models.drop_all(_ENGINE)
 
 
 @pytest.fixture
-def unauthenticated_client() -> TestClient:
-    try:
-        #models.create_all(_ENGINE)
-        app.dependency_overrides[db.get_engine] = lambda: _ENGINE
-        app.dependency_overrides[auth.current_user] = _unauthenticated_current_user
+def client() -> TestClient:
+    app.dependency_overrides[auth.current_user] = _authenticated_current_user(_make_user())
+    app.dependency_overrides[db.get_engine] = lambda: _ENGINE
 
-        yield TestClient(app)
-    finally:
-        # models.drop_all(_ENGINE)
-        pass
+    yield TestClient(app)
+
+
+@pytest.fixture
+def unauthenticated_client() -> TestClient:
+    app.dependency_overrides[db.get_engine] = lambda: _ENGINE
+    app.dependency_overrides[auth.current_user] = _unauthenticated_current_user
+
+    yield TestClient(app)

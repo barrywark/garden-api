@@ -21,7 +21,7 @@ def _get_species(session: db.Session, user: m.User = None) -> list[m.Species]:
     return session.query(m.Species).where(m.Species.owner_id == user.id).all()
 
 def _get_species_idx(session: db.Session, idx: int, user: m.User = None) -> Optional[m.Species]:
-    return session.get(m.Species, idx)
+    return session.query(m.Species).where(m.Species.id == idx and m.Species.owner_id == user.id).one() # .get(m.Species, idx) # TODO with owner_id
 
 
 def make_router(oso: Oso) -> fastapi.APIRouter:

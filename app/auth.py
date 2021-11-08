@@ -129,10 +129,10 @@ def _make_token(user_email):
     return auth_token
 
 
-def _get_or_create_user_by_email(session: app.db.Session, email: str) -> m.User:
+def _get_or_create_user_by_email(session: app.db.Session, email: str) -> m.SerializedUser:
     user = session.query(m.User).filter(m.User.email == email).first()
     if user:
-        return user
+        return m.SerializedUser(email=user.email, id=user.id)
     return _create_user(session, m.UserBase(email=email))
 
 
