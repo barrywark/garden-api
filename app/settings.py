@@ -9,6 +9,8 @@ class _Settings(pydantic.BaseSettings):
     google_client_secret: Optional[str] = None
     database_url: Optional[pydantic.networks.PostgresDsn] = None
     session_secret_key: Optional[str] = 'not-secret'
+    jwt_secret: Optional[str] = 'not-secret'
+    jwt_lifetime_seconds: Optional[int] = 3600
 
 @functools.lru_cache()
 def get_settings() -> _Settings:

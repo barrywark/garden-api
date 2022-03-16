@@ -1,16 +1,16 @@
 # database
-psycopg2-binary
+asyncpg
 SQLAlchemy
 sqlmodel
-
-# auth
-authlib
-oso
-sqlalchemy-oso
 
 # API Server
 fastapi[all]
 uvicorn
+
+# auth
+fastapi-users[sqlalchemy2]
+oso
+sqlalchemy-oso
 
 # plugins
 fastapi-crudrouter

@@ -1,14 +1,21 @@
+from typing import Optional
+
 import fastapi
+from oso.oso import Oso
+
 import app.db as db
 import app.auth as auth
 import app.models as m
-import sqlmodel as sql
 
-from typing import Optional
-from oso import Oso
 
 
 def _create_species(session: db.Session, owner: m.User = None, new_species: m.NewSpecies = None) -> m.Species:
+    if owner is None:
+        raise Exception("owner cannot be None")
+
+    if new_species is None:
+        raise Exception("new_species cannot be None")
+    
     s = m.Species(name=new_species.name, owner=owner)
     session.add(s)
     session.commit()
@@ -21,7 +28,7 @@ def _get_species(session: db.Session, user: m.User = None) -> list[m.Species]:
     return session.query(m.Species).where(m.Species.owner_id == user.id).all()
 
 def _get_species_idx(session: db.Session, idx: int, user: m.User = None) -> Optional[m.Species]:
-    return session.query(m.Species).where(m.Species.id == idx and m.Species.owner_id == user.id).one() # .get(m.Species, idx) # TODO with owner_id
+    return session.get(m.Species, idx) # TODO with owner_id
 
 
 def make_router(oso: Oso) -> fastapi.APIRouter:
@@ -48,7 +55,7 @@ def make_router(oso: Oso) -> fastapi.APIRouter:
     @router.get("/species/{idx}", response_model=m.Species)
     async def get_species_id(idx: int, 
                              current_user: m.SerializedUser = fastapi.Depends(auth.current_user), 
-                             session: db.Session = fastapi.Depends(db.get_session)):
+                             session: db.Session = fastapi.Depends(auth.make_oso_authorized_db(oso))):
         
         user = session.get(m.User, current_user.id)
         s = _get_species_idx(session, idx, user=user)

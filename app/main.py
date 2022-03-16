@@ -1,15 +1,16 @@
 import fastapi
 import oso
+
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+
 import app.models as models
 import app.db as db
 import app.api.ping as ping
 import app.api.plants as plants
 import app.api.users as users
-import app.auth as auth
 
 from app.settings import get_settings
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.sessions import SessionMiddleware
 
 _settings = get_settings()
 
@@ -38,9 +39,14 @@ app.add_middleware(
 
 app.include_router(ping.router)
 app.include_router(plants.make_router(oso))
-app.include_router(users.router)
-app.include_router(auth.router)
+app.include_router(users.make_router())
+
+
 
 @app.on_event("startup")
-async def startup():
-    models.create_all(db.ENGINE)
+async def on_startup():
+    """
+    Startup event
+    """
+    # Not needed if you setup a migration system like Alembic
+    await db.create_db_and_tables()

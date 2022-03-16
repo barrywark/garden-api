@@ -1,32 +1,14 @@
 import uuid
-
+from jinja2 import pass_context
 import sqlalchemy
 import sqlmodel as sql
+import fastapi_users.models
 
-from sqlalchemy.types import TypeDecorator, CHAR
+from typing import AsyncGenerator
 from typing import Optional, List
+from sqlalchemy.types import TypeDecorator, CHAR
 from app.db import Base
 
-
-
-def create_all(engine: sqlalchemy.engine.Engine) -> None:
-    """
-    Create all tables
-    """
-    Base.metadata.create_all(engine)
-
-
-def drop_all(engine: sqlalchemy.engine.Engine) -> None:
-    """
-    !!Drop all the tables!!
-    """
-
-    Base.metadata.drop_all(engine)
-
-
-class AuthToken(Base, table=False):
-    token: str
-    token_type: str
 
 class GUID(TypeDecorator):
     """Platform-independent GUID type.
@@ -64,23 +46,26 @@ class GUID(TypeDecorator):
                 value = uuid.UUID(value)
             return value
 
-## Users and Teams
 
-class UserBase(Base):
-    full_name: Optional[str] = None
-    email: str
+## Users
+class User(fastapi_users.models.BaseUser):
+    pass
 
 
-class User(UserBase, table=True):
-    id: Optional[int] = sql.Field(default=None, primary_key=True)
+class UserCreate(fastapi_users.models.BaseUserCreate):
+    pass
 
-    #gardens: List["Garden"] = sql.Relationship(back_populates="owner")
-    species: List["Species"] = sql.Relationship(back_populates="owner")
-    #plants: List["Plant"] = sql.Relationship(back_populates="owner")
 
-class SerializedUser(Base, table=False):
-    id: int
-    email: str
+class UserUpdate(fastapi_users.models.BaseUserUpdate):
+    pass
+
+
+class UserDB(User, fastapi_users.models.BaseUserDB):
+     #gardens: List["Garden"] = sql.Relationship(back_populates="owner")
+     #species: List["Species"] = sql.Relationship(back_populates="owner")
+     #plants: List["Plant"] = sql.Relationship(back_populates="owner")
+     pass_context
+
 
 # ## Business Model
 class GardenBase(Base):
