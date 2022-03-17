@@ -1,6 +1,6 @@
 # database
 asyncpg
-SQLAlchemy
+sqlalchemy[asyncio]
 sqlmodel
 
 # API Server
@@ -20,4 +20,6 @@ httpx
 
 # dev
 pytest
+pytest-asyncio
+aiosqlite
 requests

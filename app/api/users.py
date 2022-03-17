@@ -65,9 +65,7 @@ fastapi_users = FastAPIUsers(
     UserDB,
 )
 
-current_active_user = fastapi_users.current_user(active=True)
-
-async def make_router():
+def make_router():
     """
     fastapi-users routes
     """

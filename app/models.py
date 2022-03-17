@@ -7,8 +7,8 @@ import fastapi_users.models
 from typing import AsyncGenerator
 from typing import Optional, List
 from sqlalchemy.types import TypeDecorator, CHAR
-from app.db import Base
 
+Base = sql.SQLModel
 
 class GUID(TypeDecorator):
     """Platform-independent GUID type.
@@ -64,7 +64,7 @@ class UserDB(User, fastapi_users.models.BaseUserDB):
      #gardens: List["Garden"] = sql.Relationship(back_populates="owner")
      #species: List["Species"] = sql.Relationship(back_populates="owner")
      #plants: List["Plant"] = sql.Relationship(back_populates="owner")
-     pass_context
+     pass
 
 
 # ## Business Model
@@ -84,8 +84,8 @@ class Species(NewSpecies, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True)
     name: str
 
-    owner_id: int = sql.Field(default=None, foreign_key="user.id")
-    owner: User = sql.Relationship(back_populates="species")
+    # owner_id: int = sql.Field(default=None, foreign_key="user.id")
+    # owner: User = sql.Relationship(back_populates="species")
 
 
 class Plant(Base, table=True):
