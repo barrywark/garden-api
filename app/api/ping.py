@@ -10,6 +10,7 @@ async def pong():
     return {"alive": True}
 
 
-@router.get("/authping")
+@router.get("/auth-ping")
 async def authping(user: m.User = Depends(auth.current_user)):
-    return {"authenticated": True}
+    return {"authenticated": True,
+            "username": user.email}

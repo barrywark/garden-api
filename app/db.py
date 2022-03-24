@@ -1,23 +1,14 @@
 from typing import AsyncGenerator
 
 from fastapi import Depends
-from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+from fastapi_users_db_sqlmodel import SQLModelUserDatabaseAsync
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
-from app.models import UserDB, Base
+import app.models as models
 
 from app.settings import get_settings, Settings
-
-DeclarativeBase: DeclarativeMeta = declarative_base()
-
-class UserTable(DeclarativeBase, SQLAlchemyBaseUserTable):
-    """
-    fastapi-users Users table
-    """
-    pass
 
 Session = AsyncSession
 
@@ -27,7 +18,7 @@ def get_engine(settings: Settings = Depends(get_settings)) -> AsyncEngine:
     """
     Async dependency for database engine
     """
-    
+
     global _ENGINE
 
     if _ENGINE is None:
@@ -65,11 +56,11 @@ async def get_async_session(async_session_maker=Depends(get_async_session_maker)
         yield session
 
 
-async def get_user_db(session: AsyncSession = Depends(get_async_session)) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
+async def get_user_db(session: AsyncSession = Depends(get_async_session)) -> AsyncGenerator[SQLModelUserDatabaseAsync, None]:
     """
     Get fastapi-users `UserDatabase`
     """
-    yield SQLAlchemyUserDatabase(UserDB, session, UserTable)
+    yield SQLModelUserDatabaseAsync(models.User, session)
 
 
 async def create_db_and_tables(engine: AsyncEngine = Depends(get_engine)):
@@ -78,8 +69,7 @@ async def create_db_and_tables(engine: AsyncEngine = Depends(get_engine)):
     """
 
     async with engine.begin() as conn:
-        await conn.run_sync(DeclarativeBase.metadata.create_all)
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(models.Base.metadata.create_all)
 
 async def drop_tables(engine: AsyncEngine = Depends(get_engine)):
     """
@@ -87,6 +77,6 @@ async def drop_tables(engine: AsyncEngine = Depends(get_engine)):
     """
 
     async with engine.begin() as conn:
-        await conn.run_sync(DeclarativeBase.metadata.drop_all)
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(models.Base.metadata.drop_all)
+
 

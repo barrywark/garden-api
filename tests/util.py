@@ -1,11 +1,14 @@
 import typing
+import contextlib
 import pytest
-import fastapi_users
+
+from fastapi_users.manager import UserAlreadyExists
 from starlette.testclient import TestClient
 
 import app.settings as settings
 import app.db as db
 import app.models as models
+import app.api.users as users
 
 from app.main import app
 
@@ -16,7 +19,7 @@ def get_settings_override() -> settings.Settings:
     """
 
     return settings.Settings(
-        testing=1,
+        testing=True,
         database_url="sqlite+aiosqlite:///memory:"
     )
 
@@ -35,25 +38,62 @@ async def client() -> typing.AsyncGenerator[TestClient, None]:
         yield test_client
 
     # tear down
-    await db.drop_tables(engine=db.get_engine(settings=get_settings_override()))
+    await db.drop_tables(engine=engine)
 
 
-# @pytest.fixture
-# @pytest.mark.asyncio
-# async def basic_user() -> models.UserDB:
-#     """
-#     Verified, active, non-superuser User
-#     """
-#     user_create = models.UserCreate(
-#         username='test_user',
-#         password='test123',
-#         email='test@example.com',
-#         is_active=True,
-#         is_superuser=False,
-#         is_verified=True
-#     )
+def login(test_client: TestClient, email: str, password: str) -> str:
+    """
+    Return access token for user via /auth/jwt/login
+    """
 
-#     user = await fastapi_users.create_user(user_create)
+    auth_response = test_client.post('/auth/jwt/login', 
+        data={"username": email, "password": password})
     
-#     yield user
+    assert auth_response.status_code == 200
+    token = auth_response.json()['access_token']
 
+    return token
+
+def authentication_headers(token: str) -> dict[str,str]:
+    return {'Authorization': f'Bearer {token}'}
+
+
+get_engine_context = contextlib.asynccontextmanager(db.get_engine)
+get_async_session_maker_context = contextlib.asynccontextmanager(db.get_async_session_maker)
+get_async_session_context = contextlib.asynccontextmanager(db.get_async_session)
+get_user_db_context = contextlib.asynccontextmanager(db.get_user_db)
+get_user_manager_context = contextlib.asynccontextmanager(users.get_user_manager)
+
+
+async def create_user(email: str, password: str, is_superuser: bool = False) -> models.User:
+    """
+    Create a user via UserManager. For use outside dependency injection
+    """
+
+    try:
+        engine = db.get_engine(settings=get_settings_override())
+        session_maker = db.get_async_session_maker(engine=engine)
+        async with get_async_session_context(async_session_maker=session_maker) as session:
+            async with get_user_db_context(session) as user_db:
+                async with get_user_manager_context(user_db) as user_manager:
+                    user = await user_manager.create(
+                        models.UserCreateModel(
+                            email=email, password=password, is_superuser=is_superuser
+                        )
+                    )
+                    print(f"User created {user}")
+                    return user
+
+    except UserAlreadyExists:
+        print(f"User {email} already exists")
+
+
+BASIC_USER_EMAIL = 'user@test.com'
+BASIC_USER_PASSWORD = 'NOT SECRET'
+@pytest.fixture
+async def basic_user()  -> typing.AsyncGenerator[models.User, None]:
+    """
+    Verified, active, non-superuser User
+    """
+
+    yield await create_user(email=BASIC_USER_EMAIL, password=BASIC_USER_PASSWORD, is_superuser=False)
