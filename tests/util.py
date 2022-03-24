@@ -20,7 +20,7 @@ def get_settings_override() -> settings.Settings:
 
     return settings.Settings(
         testing=True,
-        database_url="sqlite+aiosqlite:///memory:"
+        database_url="sqlite+aiosqlite://"
     )
 
 @pytest.fixture
@@ -29,15 +29,16 @@ async def client() -> typing.AsyncGenerator[TestClient, None]:
     Create a test client with test-specific settings
     """
     
-    # create database tables
     engine = db.get_engine(settings=get_settings_override())
+
+    # create database tables
     await db.create_db_and_tables(engine=engine)
 
     with TestClient(app) as test_client:
         # testing
         yield test_client
 
-    # tear down
+    # tear down: drop database tables
     await db.drop_tables(engine=engine)
 
 

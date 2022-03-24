@@ -16,11 +16,11 @@ _settings = get_settings()
 # Oso setup
 oso = oso.Oso()
 
-# oso.register_class(models.UserModel)
-# oso.register_class(models.Species)
-# oso.register_class(models.NewSpecies)
+oso.register_class(models.User)
+oso.register_class(models.Species)
+oso.register_class(models.NewSpecies)
 
-# oso.load_files(["app/policy.polar"])
+oso.load_files(["app/policy.polar"])
 
 
 # App setup
