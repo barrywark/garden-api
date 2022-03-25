@@ -31,15 +31,14 @@ async def client() -> typing.AsyncGenerator[TestClient, None]:
     
     engine = db.get_engine(settings=get_settings_override())
 
-    # create database tables
+    # reset database tables
+    await db.drop_tables(engine=engine)
     await db.create_db_and_tables(engine=engine)
 
     with TestClient(app) as test_client:
         # testing
         yield test_client
 
-    # tear down: drop database tables
-    await db.drop_tables(engine=engine)
 
 
 def login(test_client: TestClient, email: str, password: str) -> str:
@@ -98,3 +97,13 @@ async def basic_user()  -> typing.AsyncGenerator[models.User, None]:
     """
 
     yield await create_user(email=BASIC_USER_EMAIL, password=BASIC_USER_PASSWORD, is_superuser=False)
+
+ALT_USER_EMAIL = 'alt@test.com'
+ALT_USER_PASSWORD = 'NOT SECRET'
+@pytest.fixture
+async def alt_user()  -> typing.AsyncGenerator[models.User, None]:
+    """
+    Alternate verified, active, non-superuser User
+    """
+
+    yield await create_user(email=ALT_USER_EMAIL, password=ALT_USER_PASSWORD, is_superuser=False)

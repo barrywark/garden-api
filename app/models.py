@@ -1,4 +1,6 @@
-from typing import Optional
+from typing import Optional, List
+import uuid
+import pydantic
 
 import sqlmodel as sql
 import fastapi_users.models
@@ -20,7 +22,15 @@ class UserUpdateModel(fastapi_users.models.BaseUserUpdate):
 
 
 class User(users_sqlmodel.SQLModelBaseUserDB, table=True):
-    pass
+    # Override to add index
+    id: pydantic.UUID4 = sql.Field(default_factory=uuid.uuid4,
+                                    primary_key=True,
+                                    nullable=False,
+                                    index=True)
+
+    species: Optional[List["Species"]] = sql.Relationship(back_populates="owner")
+
+
 
 # ## Business Model
 class GardenBase(Base):
@@ -39,8 +49,8 @@ class Species(NewSpecies, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False)
     name: str
 
-    # owner_id: int = sql.Field(default=None, foreign_key="user.id")
-    # owner: User = sql.Relationship(back_populates="species")
+    owner_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="user.id")
+    owner: User = sql.Relationship(back_populates="species")
 
 
 class Plant(Base, table=True):

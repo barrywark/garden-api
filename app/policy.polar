@@ -18,10 +18,7 @@ has_role(user: User, "owner", species: Species) if
     species.owner = user;
 
 # Allow Species creation
-allow(_: User, "create", _: NewSpecies);
-
-# Allow all to read `User` (for SQLAlchemy integration)
-allow(_: User, "read", _: User);
+allow(_: User, "create", _: Species);
 
 # Allow an action if the actor has permission "action" on the resource
 allow(actor, action, resource) if

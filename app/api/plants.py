@@ -1,6 +1,7 @@
 from typing import Optional
 
 import fastapi
+import sqlalchemy
 import sqlmodel as sql
 from oso.oso import Oso
 
@@ -26,33 +27,48 @@ async def _create_species(session: db.Session,
     return s
 
 
-async def _get_species(session: db.Session, user: m.User = None) -> list[m.Species]:
-    q = sql.select(m.Species) #.where(m.Species.owner_id == user.id)
+async def _get_species(session: db.Session, user: m.User = None, oso: Oso = None) -> list[m.Species]:
+    q = sql.select(m.Species).where(m.Species.owner == user)
+    # oso_q = oso.authorized_query(user, "read", m.Species)
+
     results = await session.execute(q)
-    return results.all()
+    return results.scalars().all()
 
-# def _get_species_idx(session: db.Session, idx: int, user: m.User = None) -> Optional[m.Species]:
-#     return session.get(m.Species, idx) # TODO with owner_id
+async def _get_species_idx(session: db.Session, 
+                            idx: int,
+                            user: m.User = None) -> Optional[m.Species]:
+    
+    q = sql.select(m.Species) \
+        .where(m.Species.id == idx) \
+        .where(m.Species.owner == user)
+    
+    result = await session.execute(q) # TODO with owner_id
+    return result.scalars().one()
 
 
-def make_router(oso: Oso) -> fastapi.APIRouter:
+def make_router() -> fastapi.APIRouter:
     router = fastapi.APIRouter()
 
     @router.post("/species", status_code=fastapi.status.HTTP_201_CREATED, response_model=m.Species)
     async def create_species(new_species: m.NewSpecies, 
                              current_user: m.User = fastapi.Depends(auth.current_user), 
-                             session: db.Session = fastapi.Depends(db.get_async_session)):
+                             session: db.Session = fastapi.Depends(db.get_async_session),
+                             oso: Oso = fastapi.Depends(auth.get_oso)):
         
-        if not oso.is_allowed(current_user, "create", new_species):
+        if not oso.is_allowed(current_user, "create", m.Species):
             raise fastapi.HTTPException(fastapi.status.HTTP_403_FORBIDDEN)
         
-        return await _create_species(session, new_species=new_species, owner=current_user)
+        result = await _create_species(session, new_species=new_species, owner=current_user)
+        return result
+
 
     @router.get("/species", response_model=list[m.Species])
     async def get_species(current_user: m.User = fastapi.Depends(auth.current_user),
-                        session: db.Session = fastapi.Depends(db.get_async_session)):
+                        session: db.Session = fastapi.Depends(db.get_async_session),
+                        oso: Oso = fastapi.Depends(auth.get_oso)):
         
-        return await _get_species(session, user=current_user)
+        result = await _get_species(session, user=current_user, oso=oso)
+        return result
 
 
     @router.get("/species/{idx}", response_model=m.Species)
@@ -60,11 +76,11 @@ def make_router(oso: Oso) -> fastapi.APIRouter:
                              current_user: m.User = fastapi.Depends(auth.current_user), 
                              session: db.Session = fastapi.Depends(db.get_async_session)):
         
-        user = session.get(m.User, current_user.id)
-        s = _get_species_idx(session, idx, user=user)
-        if s is None:
+        try:
+            result = await _get_species_idx(session, idx, user=current_user)
+            return result
+        except sqlalchemy.exc.NoResultFound:
             raise fastapi.HTTPException(fastapi.status.HTTP_404_NOT_FOUND)
-
-        return s
+        
 
     return router

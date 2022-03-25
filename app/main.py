@@ -1,10 +1,8 @@
 import fastapi
-import oso
 
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-import app.models as models
 import app.api.ping as ping
 import app.api.plants as plants
 import app.api.users as users
@@ -12,15 +10,6 @@ import app.api.users as users
 from app.settings import get_settings
 
 _settings = get_settings()
-
-# Oso setup
-oso = oso.Oso()
-
-oso.register_class(models.User)
-oso.register_class(models.Species)
-oso.register_class(models.NewSpecies)
-
-oso.load_files(["app/policy.polar"])
 
 
 # App setup
@@ -37,7 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(ping.router)
-app.include_router(plants.make_router(oso))
+app.include_router(plants.make_router())
 app.include_router(users.make_router())
 
 
