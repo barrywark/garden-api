@@ -28,7 +28,7 @@ async def client() -> typing.AsyncGenerator[TestClient, None]:
     """
     Create a test client with test-specific settings
     """
-    
+
     engine = db.get_engine(settings=get_settings_override())
 
     # reset database tables

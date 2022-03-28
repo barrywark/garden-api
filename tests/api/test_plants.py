@@ -80,3 +80,21 @@ def test_get_species_by_id_as_owner(client, basic_user):
                             
     assert response.status_code == 200
     assert response.json().get('id') == result_id
+
+
+def test_get_species_by_id_returns_404(client, basic_user):
+    token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
+
+    non_existant_id = 1000
+    response = client.get(f"/species/{non_existant_id}",
+                            headers=util.authentication_headers(token))
+                            
+    assert response.status_code == 404
+
+
+def test_can_patch_species(client, basic_user):
+    assert False
+
+def test_cannot_patch_unauthorized_species(client, basic_user):
+    assert False
+

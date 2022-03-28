@@ -28,7 +28,6 @@ def get_engine(settings: Settings = Depends(get_settings)) -> AsyncEngine:
 
 
 _ASYNC_SESSION_MAKER = None
-
 def get_async_session_maker(engine: AsyncEngine = Depends(get_engine)):
     """
     Get an async session maker
@@ -40,6 +39,17 @@ def get_async_session_maker(engine: AsyncEngine = Depends(get_engine)):
         _ASYNC_SESSION_MAKER = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     return _ASYNC_SESSION_MAKER
+
+
+_SYNC_SESSION_MAKER = None
+def get_sync_session_maker(engine: AsyncEngine = Depends(get_engine)):
+    global _SYNC_SESSION_MAKER
+    
+    if _SYNC_SESSION_MAKER is None:
+        _SYNC_SESSION_MAKER = sessionmaker(engine, expire_on_commit=False)
+    
+    return _SYNC_SESSION_MAKER
+
 
 async def get_async_session(async_session_maker=Depends(get_async_session_maker)) -> AsyncGenerator[AsyncSession, None]:
     """
@@ -55,6 +65,9 @@ async def get_async_session(async_session_maker=Depends(get_async_session_maker)
     async with async_session_maker() as session:
         yield session
 
+async def get_sync_session(sync_session_maker=Depends(get_sync_session_maker)) -> AsyncGenerator[Session, None]:
+    with sync_session_maker() as session:
+        yield session
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)) -> AsyncGenerator[SQLModelUserDatabaseAsync, None]:
     """

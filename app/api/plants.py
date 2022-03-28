@@ -2,7 +2,6 @@ from typing import Optional
 
 import fastapi
 import sqlalchemy
-import sqlmodel as sql
 from oso.oso import Oso
 
 import app.db as db
@@ -27,22 +26,25 @@ async def _create_species(session: db.Session,
     return s
 
 
-async def _get_species(session: db.Session, user: m.User = None, oso: Oso = None) -> list[m.Species]:
-    q = sql.select(m.Species).where(m.Species.owner == user)
-    # oso_q = oso.authorized_query(user, "read", m.Species)
+async def _get_species(session: db.Session, 
+    user: m.User = None, 
+    oso: Oso = None) -> list[m.Species]:
+
+    q = oso.authorized_query(user, "read", m.Species)
 
     results = await session.execute(q)
+    
     return results.scalars().all()
 
 async def _get_species_idx(session: db.Session, 
                             idx: int,
-                            user: m.User = None) -> Optional[m.Species]:
+                            user: m.User = None,
+                            oso: Oso = None) -> Optional[m.Species]:
     
-    q = sql.select(m.Species) \
-        .where(m.Species.id == idx) \
-        .where(m.Species.owner == user)
+    q = oso.authorized_query(user, "read", m.Species) \
+            .where(m.Species.id == idx)
     
-    result = await session.execute(q) # TODO with owner_id
+    result = await session.execute(q)
     return result.scalars().one()
 
 
@@ -74,13 +76,18 @@ def make_router() -> fastapi.APIRouter:
     @router.get("/species/{idx}", response_model=m.Species)
     async def get_species_id(idx: int, 
                              current_user: m.User = fastapi.Depends(auth.current_user), 
-                             session: db.Session = fastapi.Depends(db.get_async_session)):
+                             session: db.Session = fastapi.Depends(db.get_async_session),
+                             oso: Oso = fastapi.Depends(auth.get_oso)):
         
         try:
-            result = await _get_species_idx(session, idx, user=current_user)
+            result = await _get_species_idx(session, idx, user=current_user, oso=oso)
             return result
-        except sqlalchemy.exc.NoResultFound:
-            raise fastapi.HTTPException(fastapi.status.HTTP_404_NOT_FOUND)
+        except sqlalchemy.exc.NoResultFound as exc:
+            raise fastapi.HTTPException(fastapi.status.HTTP_404_NOT_FOUND) from exc
         
+    @router.patch("/sepcies/{idx}", response_model=m.Species)
+    async def patch_species_idx():
+        return None
+    
 
     return router
