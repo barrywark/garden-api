@@ -92,6 +92,41 @@ def test_get_species_by_id_returns_404(client, basic_user):
     assert response.status_code == 404
 
 
+def test_can_delete_species(client, basic_user):
+    token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
+
+    create_response = client.post("/species", 
+                        headers=util.authentication_headers(token),
+                        json={"name": "new species"})
+    assert create_response.status_code == 201
+
+    species_id = create_response.json().get('id')
+
+    delete_response = client.delete(f"/species/{species_id}",
+                            headers=util.authentication_headers(token))
+
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {'ok': True}
+
+
+def test_cannot_delete_unauthorized_species(client, basic_user, alt_user):
+    token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
+    alt_token = util.login(client, email=alt_user.email, password=util.ALT_USER_PASSWORD)
+
+
+    create_response = client.post("/species", 
+                        headers=util.authentication_headers(token),
+                        json={"name": "new species"})
+    assert create_response.status_code == 201
+
+    species_id = create_response.json().get('id')
+
+    delete_response = client.delete(f"/species/{species_id}",
+                            headers=util.authentication_headers(alt_token))
+
+    assert delete_response.status_code == 404
+
+
 def test_can_patch_species(client, basic_user):
     token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
 

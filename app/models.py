@@ -8,6 +8,9 @@ import fastapi_users_db_sqlmodel as users_sqlmodel
 
 Base = sql.SQLModel
 
+class DeleteModel(Base, table=False):
+    ok: bool
+
 ## Users
 class UserModel(fastapi_users.models.BaseUser):
     pass
