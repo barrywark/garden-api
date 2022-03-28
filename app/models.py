@@ -45,6 +45,11 @@ class Garden(GardenBase, table=True):
 class NewSpecies(Base):
     name: str
 
+class SpeciesUpdate(Base):
+    name: Optional[str] = None
+    # owner_id: Optional[pydantic.UUID4]
+
+
 class Species(NewSpecies, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False)
     name: str

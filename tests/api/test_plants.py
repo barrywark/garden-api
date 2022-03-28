@@ -93,8 +93,49 @@ def test_get_species_by_id_returns_404(client, basic_user):
 
 
 def test_can_patch_species(client, basic_user):
-    assert False
+    token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
 
-def test_cannot_patch_unauthorized_species(client, basic_user):
-    assert False
+    create_response = client.post("/species", 
+                        headers=util.authentication_headers(token),
+                        json={"name": "new species"})
+    assert create_response.status_code == 201
+
+    species_id = create_response.json().get('id')
+
+    updated_name = "updated species"
+    patch_response = client.patch(f"/species/{species_id}",
+                            headers=util.authentication_headers(token),
+                            json={"name": updated_name})
+
+    assert patch_response.status_code == 200
+
+    response = client.get(f"/species/{species_id}",
+                            headers=util.authentication_headers(token))
+
+    assert response.status_code == 200
+    assert response.json()["name"] == updated_name
+
+def test_cannot_patch_unauthorized_species(client, basic_user, alt_user):
+    token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
+    alt_token = util.login(client, email=alt_user.email, password=util.ALT_USER_PASSWORD)
+
+    create_response = client.post("/species", 
+                        headers=util.authentication_headers(token),
+                        json={"name": "new species"})
+    assert create_response.status_code == 201
+
+    species_id = create_response.json().get('id')
+
+    updated_name = "updated species"
+    patch_response = client.patch(f"/species/{species_id}",
+                            headers=util.authentication_headers(alt_token),
+                            json={"name": updated_name})
+
+    assert patch_response.status_code == 404
+
+    response = client.get(f"/species/{species_id}",
+                            headers=util.authentication_headers(token))
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "new species"
 
