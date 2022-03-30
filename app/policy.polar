@@ -74,6 +74,7 @@ has_role(user: User, "owner", species: Species) if
 
 # Allow Species creation
 allow(_: User, "create", _: Species);
+allow(_: User, "create", _: Garden);
 
 # Allow an action if the actor has permission "action" on the resource
 allow(actor, action, resource) if

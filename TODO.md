@@ -1,6 +1,6 @@
 [ ] Gardens API
     [x] Species
-    [ ] Zone
+    [x] Zone
     [ ] Garden
     [ ] Planting
 

@@ -41,6 +41,12 @@ class User(users_sqlmodel.SQLModelBaseUserDB, table=True):
 class GardenBase(Base):
     name: str
 
+class NewGarden(GardenBase):
+    pass
+
+class GardenUpdate(GardenBase, table=False):
+    plantings: Optional[List["Planting"]] = sql.Relationship(back_populates="garden")
+
 class Garden(GardenBase, table=True):
     id: Optional[pydantic.UUID4] = sql.Field(default_factory=uuid.uuid4,
                                     primary_key=True,
