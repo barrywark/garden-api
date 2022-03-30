@@ -14,12 +14,14 @@ resource Garden {
 
 resource Zone {
     permissions = ["create", "read", "write", "delete"];
-    roles = ["admin"];
+    roles = ["admin", "user"];
 
     "create" if "admin";
     "read" if "admin";
     "write" if "admin";
     "delete" if "admin";
+
+    "read" if "user";
 }
 
 
@@ -62,6 +64,8 @@ has_role(user: User, "owner", garden: Garden) if
 
 has_role(user: User, "admin", _: Zone) if
     user.is_superuser;
+
+has_role(_: User, "user", _: Zone);
 
 has_role(user: User, "owner", species: Species) if
     species.owner = user;

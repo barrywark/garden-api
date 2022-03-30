@@ -85,4 +85,8 @@ class Planting(Base, table=True):
 class Zone(Base, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False)
     name: str
+
+class ZoneUpdate(Base):
+    name: Optional[str] = None
+
 #endregion
