@@ -107,3 +107,14 @@ async def alt_user()  -> typing.AsyncGenerator[models.User, None]:
     """
 
     yield await create_user(email=ALT_USER_EMAIL, password=ALT_USER_PASSWORD, is_superuser=False)
+
+
+SUPER_USER_EMAIL = 'super@test.com'
+SUPER_USER_PASSWORD = 'NOT SECRET'
+@pytest.fixture
+async def super_user()  -> typing.AsyncGenerator[models.User, None]:
+    """
+    Alternate verified, active, superuser User
+    """
+
+    yield await create_user(email=SUPER_USER_EMAIL, password=SUPER_USER_PASSWORD, is_superuser=True)

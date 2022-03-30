@@ -11,7 +11,7 @@ Base = sql.SQLModel
 class DeleteModel(Base, table=False):
     ok: bool
 
-## Users
+#region Users
 class UserModel(fastapi_users.models.BaseUser):
     pass
 
@@ -32,19 +32,27 @@ class User(users_sqlmodel.SQLModelBaseUserDB, table=True):
                                     index=True)
 
     species: Optional[List["Species"]] = sql.Relationship(back_populates="owner")
+    gardens: Optional[List["Garden"]] = sql.Relationship(back_populates="owner")
+
+#endregion
 
 
-
-# ## Business Model
+#region Business Model
 class GardenBase(Base):
     name: str
 
 class Garden(GardenBase, table=True):
-    id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False)
+    id: Optional[pydantic.UUID4] = sql.Field(default_factory=uuid.uuid4,
+                                    primary_key=True,
+                                    nullable=False,
+                                    index=True)
 
-    #owner: User = sql.Relationship(back_populates="gardens")
-    #plants: List["Plant"] = sql.Relationship(back_populates="gardens")
+    owner_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="user.id")
+    owner: User = sql.Relationship(back_populates="gardens")
 
+    plantings: Optional[List["Planting"]] = sql.Relationship(back_populates="garden")
+
+#region Species
 class NewSpecies(Base):
     name: str
 
@@ -59,12 +67,22 @@ class Species(NewSpecies, table=True):
 
     owner_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="user.id")
     owner: User = sql.Relationship(back_populates="species")
+#endregion
+
+class Planting(Base, table=True):
+    id: pydantic.UUID4 = sql.Field(default_factory=uuid.uuid4,
+                                    primary_key=True,
+                                    nullable=False,
+                                    index=True)
+
+    species_id: int = sql.Field(foreign_key="species.id")
+    species: Species = sql.Relationship()
+
+    garden_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="garden.id")
+    garden: Garden = sql.Relationship(back_populates="plantings")
 
 
-class Plant(Base, table=True):
+class Zone(Base, table=True):
     id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False)
     name: str
-
-    #species: Species = sql.Relationship()
-    #gardens: List[Garden] = sql.Relationship(back_populates="plants")
-    #owner: User = sql.Relationship(back_populates="plants")
+#endregion

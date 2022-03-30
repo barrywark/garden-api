@@ -6,6 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import app.api.ping as ping
 import app.api.plants as plants
 import app.api.users as users
+import app.api.zones as zones
 
 from app.settings import get_settings
 
@@ -28,6 +29,7 @@ app.add_middleware(
 app.include_router(ping.router)
 app.include_router(plants.make_router())
 app.include_router(users.make_router())
+app.include_router(zones.make_router())
 
 
 
