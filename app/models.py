@@ -58,6 +58,9 @@ class Garden(GardenBase, table=True):
 
     plantings: Optional[List["Planting"]] = sql.Relationship(back_populates="garden")
 
+    zone_id: Optional[int] = sql.Field(foreign_key="zone.id")
+    zone: Optional["Zone"] = sql.Relationship()
+
 #region Species
 class NewSpecies(Base):
     name: str
@@ -74,6 +77,16 @@ class Species(NewSpecies, table=True):
     owner_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="user.id")
     owner: User = sql.Relationship(back_populates="species")
 #endregion
+
+class NewPlanting(Base, table=False):
+    species_id: int = sql.Field(foreign_key="species.id")
+    garden_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="garden.id")
+
+
+class PlantingUpdate(Base, table=False):
+    species_id: Optional[int] = sql.Field(foreign_key="species.id")
+    garden_id: Optional[pydantic.UUID4] = sql.Field(default_factory=None, foreign_key="garden.id")
+
 
 class Planting(Base, table=True):
     id: pydantic.UUID4 = sql.Field(default_factory=uuid.uuid4,

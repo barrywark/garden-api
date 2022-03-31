@@ -1,5 +1,6 @@
 import typing
 import contextlib
+import pydantic
 import pytest
 
 from fastapi_users.manager import UserAlreadyExists
@@ -86,6 +87,31 @@ async def create_user(email: str, password: str, is_superuser: bool = False) -> 
 
     except UserAlreadyExists:
         print(f"User {email} already exists")
+
+
+def make_species(client: TestClient = None, token: str = None):
+    species_response = client.post("/species",
+                                    headers=authentication_headers(token),
+                                    json={"name": "species name"})
+
+    return species_response.json()
+
+
+def make_garden(client: TestClient = None, token: str = None):
+    garden_response = client.post("/gardens",
+                                    headers=authentication_headers(token),
+                                    json={"name": "garden name"})
+
+    return garden_response.json()
+    
+
+def garden_fixture(client: TestClient = None, token: str = None) -> typing.Tuple[pydantic.UUID4,int]:
+    """
+    [garden_id, species_id]
+    """
+
+    return (make_garden(client=client, token=token).get('id'),
+            make_species(client=client, token=token).get('id'))
 
 
 BASIC_USER_EMAIL = 'user@test.com'
