@@ -1,9 +1,11 @@
-from typing import Optional
-
 import fastapi
 import sqlalchemy
 import pydantic
+
 from oso.oso import Oso
+
+from fastapi_pagination import Page
+from fastapi_pagination.ext.async_sqlalchemy import paginate
 
 import app.db as db
 import app.models as m
@@ -29,7 +31,7 @@ def make_router() -> fastapi.APIRouter:
 
         return result
 
-    @router.get("/gardens", response_model=list[m.Garden])
+    @router.get("/gardens", response_model=Page[m.Garden])
     async def get_gardens(
         current_user: m.User = fastapi.Depends(auth.current_user),
         session: db.Session = fastapi.Depends(db.get_async_session),
@@ -50,14 +52,18 @@ def make_router() -> fastapi.APIRouter:
         session: db.Session = fastapi.Depends(db.get_async_session),
         oso: Oso = fastapi.Depends(auth.get_oso)
     ):
-        result = await _get_garden(
-            idx,
-            session=session,
-            user=current_user,
-            oso=oso
-        )
+        try:
+            result = await _get_garden(
+                idx,
+                session=session,
+                user=current_user,
+                oso=oso
+            )
 
-        return result
+            return result
+        except sqlalchemy.exc.NoResultFound as exc:
+            raise fastapi.HTTPException(fastapi.status.HTTP_404_NOT_FOUND) from exc
+
 
     @router.patch("/gardens/{idx}", response_model=m.Garden)
     async def patch_garden(
@@ -101,9 +107,7 @@ async def _get_gardens(
 
     q = oso.authorized_query(user, "read", m.Garden)
 
-    results = await session.execute(q)
-    
-    return results.scalars().all()
+    return await paginate(session, q)
 
 
 async def _get_garden(

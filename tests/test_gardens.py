@@ -32,7 +32,7 @@ def test_get_gardens(client, basic_user):
                             headers=util.authentication_headers(token))
                             
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    assert len(response.json().get('items')) == 2
 
 
 def test_get_garden_authorizes(client, basic_user, alt_user):
@@ -50,7 +50,7 @@ def test_get_garden_authorizes(client, basic_user, alt_user):
     response = client.get(f"/gardens/{garden_id}",
                             headers=util.authentication_headers(alt_token))
     
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_get_garden(client, basic_user):
