@@ -38,6 +38,8 @@ class User(users_sqlmodel.SQLModelBaseUserDB, table=True):
 
 
 #region Business Model
+
+#region Garden
 class GardenBase(Base):
     name: str
 
@@ -60,6 +62,7 @@ class Garden(GardenBase, table=True):
 
     zone_id: Optional[int] = sql.Field(foreign_key="zone.id")
     zone: Optional["Zone"] = sql.Relationship()
+#endregion
 
 #region Species
 class NewSpecies(Base):
@@ -76,8 +79,36 @@ class Species(NewSpecies, table=True):
 
     owner_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="user.id")
     owner: User = sql.Relationship(back_populates="species")
+
+    activities: List["Activity"] = sql.Relationship(back_populates="species")
 #endregion
 
+#region Zone
+class Zone(Base, table=True):
+    id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False, index=True)
+    name: str
+
+    activities: List["Activity"] = sql.Relationship(back_populates="zone")
+
+class ZoneUpdate(Base):
+    name: Optional[str] = None
+#endregion
+
+#region Activity
+class Activity(Base, table=True):
+    id: int = sql.Field(primary_key=True, nullable=False, index=True)
+    description: str
+    short_description: str
+
+    species_id: int = sql.Field(default_factory=None, foreign_key="species.id")
+    species: Species = sql.Relationship(back_populates="activities")
+
+    zone_id: int = sql.Field(default_factory=None, foreign_key="zone.id")
+    zone: Zone = sql.Relationship(back_populates="activities")
+
+#endregion
+
+#region Plating
 class NewPlanting(Base, table=False):
     species_id: int = sql.Field(foreign_key="species.id")
     garden_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="garden.id")
@@ -100,12 +131,5 @@ class Planting(Base, table=True):
     garden_id: pydantic.UUID4 = sql.Field(default_factory=None, foreign_key="garden.id")
     garden: Garden = sql.Relationship(back_populates="plantings")
 
-
-class Zone(Base, table=True):
-    id: Optional[int] = sql.Field(default=None, primary_key=True, nullable=False)
-    name: str
-
-class ZoneUpdate(Base):
-    name: Optional[str] = None
-
+#endregion
 #endregion

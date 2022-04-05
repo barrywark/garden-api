@@ -3,6 +3,8 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+import fastapi_pagination as pagination
+
 import app.api.ping as ping
 import app.api.plants as plants
 import app.api.users as users
@@ -34,3 +36,5 @@ app.include_router(users.make_router())
 app.include_router(zones.make_router())
 app.include_router(gardens.make_router())
 app.include_router(plantings.make_router())
+
+pagination.add_pagination(app)

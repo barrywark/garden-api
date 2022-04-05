@@ -34,9 +34,9 @@ def test_get_species_owned_by_user(client, basic_user):
     response = client.get("/species",
                         headers=util.authentication_headers(token))
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]['name'] == "new species"
-    assert response.json()[0].get('id') is not None
+    assert len(response.json()['items']) == 1
+    assert response.json()['items'][0]['name'] == "new species"
+    assert response.json()['items'][0].get('id') is not None
 
 def test_get_species_returns_only_authorized_species(client, basic_user, alt_user):
     token = util.login(client, email=basic_user.email, password=util.BASIC_USER_PASSWORD)
@@ -55,9 +55,9 @@ def test_get_species_returns_only_authorized_species(client, basic_user, alt_use
     response = client.get("/species",
                         headers=util.authentication_headers(token))
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]['name'] == "new species"
-    assert response.json()[0].get('id') is not None
+    assert len(response.json()['items']) == 1
+    assert response.json()['items'][0]['name'] == "new species"
+    assert response.json()['items'][0].get('id') is not None
 
 
 def test_get_species_with_no_user(client):

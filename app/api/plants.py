@@ -4,6 +4,9 @@ import fastapi
 import sqlalchemy
 from oso.oso import Oso
 
+from fastapi_pagination import Page
+from fastapi_pagination.ext.async_sqlalchemy import paginate
+
 import app.db as db
 import app.models as m
 import app.auth as auth
@@ -32,9 +35,7 @@ async def _get_species(session: db.Session,
 
     q = oso.authorized_query(user, "read", m.Species)
 
-    results = await session.execute(q)
-    
-    return results.scalars().all()
+    return await paginate(session, q)
 
 async def _get_species_idx(session: db.Session, 
                             idx: int,
@@ -104,7 +105,7 @@ def make_router() -> fastapi.APIRouter:
         return result
 
 
-    @router.get("/species", response_model=list[m.Species])
+    @router.get("/species", response_model=Page[m.Species])
     async def get_species(current_user: m.User = fastapi.Depends(auth.current_user),
                         session: db.Session = fastapi.Depends(db.get_async_session),
                         oso: Oso = fastapi.Depends(auth.get_oso)):
