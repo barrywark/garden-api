@@ -4,6 +4,9 @@ import fastapi
 import sqlalchemy
 from oso.oso import Oso
 
+from fastapi_pagination import Page
+from fastapi_pagination.ext.async_sqlalchemy import paginate
+
 import app.db as db
 import app.models as m
 import app.auth as auth
@@ -26,7 +29,7 @@ def make_router() -> fastapi.APIRouter:
         
         return result
 
-    @router.get("/zones", response_model=list[m.Zone])
+    @router.get("/zones", response_model=Page[m.Zone])
     async def get_zones(
         current_user: m.User = fastapi.Depends(auth.current_user),
         session: db.Session = fastapi.Depends(db.get_async_session),
@@ -84,9 +87,9 @@ async def _get_zones(
     
     q = oso.authorized_query(user, "read", m.Zone)
 
-    results = await session.execute(q)
+    results = await paginate(session, q)
     
-    return results.scalars().all()
+    return results
 
 async def _patch_zone(
     idx: int,

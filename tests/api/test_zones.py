@@ -40,7 +40,7 @@ def test_get_zones(client, basic_user, super_user):
                         headers=util.authentication_headers(token))
     
     assert response.status_code == 200
-    assert len(response.json()) > 0
+    assert len(response.json().get('items')) > 0
 
 
 def test_patch_zone(client, super_user):
