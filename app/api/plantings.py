@@ -3,6 +3,9 @@ import sqlalchemy
 import pydantic
 from oso.oso import Oso
 
+from fastapi_pagination import Page
+from fastapi_pagination.ext.async_sqlalchemy import paginate
+
 import app.db as db
 import app.models as m
 import app.auth as auth
@@ -28,7 +31,7 @@ def make_router() -> fastapi.APIRouter:
 
         return result
 
-    @router.get("/plantings", response_model=list[m.Planting])
+    @router.get("/plantings", response_model=Page[m.Planting])
     async def get_plantings(
         current_user: m.User = fastapi.Depends(auth.current_user),
         session: db.Session = fastapi.Depends(db.get_async_session),
@@ -125,9 +128,9 @@ async def _get_plantings(
 
     q = oso.authorized_query(user, "read", m.Planting)
 
-    results = await session.execute(q)
+    results = await paginate(session, q)
     
-    return results.scalars().all()
+    return results
 
 
 async def _get_planting(

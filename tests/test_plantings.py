@@ -32,7 +32,7 @@ def test_get_plantings(client, basic_user):
                             headers=util.authentication_headers(token))
                             
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    assert len(response.json().get('items')) == 2
 
 
 def test_get_planting_authorizes(client, basic_user, alt_user):
