@@ -11,6 +11,7 @@ import app.api.users as users
 import app.api.zones as zones
 import app.api.gardens as gardens
 import app.api.plantings as plantings
+import app.api.activities as activities
 
 from app.settings import get_settings
 
@@ -36,5 +37,6 @@ app.include_router(users.make_router())
 app.include_router(zones.make_router())
 app.include_router(gardens.make_router())
 app.include_router(plantings.make_router())
+app.include_router(activities.make_router())
 
 pagination.add_pagination(app)

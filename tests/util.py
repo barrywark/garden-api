@@ -114,6 +114,16 @@ def garden_fixture(client: TestClient = None, token: str = None) -> typing.Tuple
             make_species(client=client, token=token).get('id'))
 
 
+@pytest.fixture
+def zone_id(client, super_user) -> typing.AsyncGenerator[models.Zone, None]:
+    token = login(client, email=super_user.email, password=SUPER_USER_PASSWORD)
+    zone_response = client.post("/zones",
+                                headers=authentication_headers(token),
+                                json={"name": "zone name"})
+    
+    return zone_response.json().get('id')
+    
+
 BASIC_USER_EMAIL = 'user@test.com'
 BASIC_USER_PASSWORD = 'NOT SECRET'
 @pytest.fixture

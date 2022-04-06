@@ -95,16 +95,35 @@ class ZoneUpdate(Base):
 #endregion
 
 #region Activity
+class NewActivity(Base, table=False):
+    description: Optional[str]
+    short_description: Optional[str]
+
+    species_id: int
+    zone_id: Optional[int]
+  
+
+class ActivityUpdate(Base, table=False):
+    description: Optional[str]
+    short_description: Optional[str]
+
+    species_id: Optional[int]
+    zone_id: Optional[int]
+
+
 class Activity(Base, table=True):
     id: int = sql.Field(primary_key=True, nullable=False, index=True)
-    description: str
-    short_description: str
+    description: Optional[str]
+    short_description: Optional[str]
 
-    species_id: int = sql.Field(default_factory=None, foreign_key="species.id")
+    species_id: int = sql.Field(
+        nullable=False,
+        default_factory=None, 
+        foreign_key="species.id")
     species: Species = sql.Relationship(back_populates="activities")
 
-    zone_id: int = sql.Field(default_factory=None, foreign_key="zone.id")
-    zone: Zone = sql.Relationship(back_populates="activities")
+    zone_id: Optional[int] = sql.Field(default_factory=None, foreign_key="zone.id")
+    zone: Optional[Zone] = sql.Relationship(back_populates="activities")
 
 #endregion
 

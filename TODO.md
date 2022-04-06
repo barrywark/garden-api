@@ -1,11 +1,12 @@
-[ ] Gardens API
+[-] Gardens API
     [x] Species
     [x] Zone
-    [ ] Garden
-    [ ] Planting
+    [x] Garden
+    [x] Planting
+    [x] Activities
 
 [ ] Admin plugin
 
-[ ] Pagination
+[x] Pagination
 
 [ ] Calendar

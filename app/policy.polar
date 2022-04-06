@@ -49,12 +49,28 @@ resource Planting {
     "contributor" if "contributor" on "garden";
 }
 
+resource Activity {
+    roles = ["admin"];
+    permissions = ["read", "write", "delete"];
+
+    "read" if "admin";
+    "write" if "admin";
+    "delete" if "admin";
+
+    relations = {species: Species};
+
+    "admin" if "admin" on "species";
+}
+
 
 actor User {}
 
 #region Relations
 has_relation(garden: Garden, "garden", planting: Planting) if
     planting.garden = garden;
+
+has_relation(species: Species, "species", activity: Activity) if
+    activity.species = species;
 #endregion
 
 

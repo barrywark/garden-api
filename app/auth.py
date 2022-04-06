@@ -49,6 +49,17 @@ _oso.register_class(
         )
     }
 )
+_oso.register_class(
+    models.Activity,
+    fields={
+        "species": oso.Relation(
+            kind="one",
+            other_type="Species",
+            my_field="species_id",
+            other_field="id"
+        )
+    }
+)
 
 _oso.load_files(
     ("app/policy.polar",)
