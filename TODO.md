@@ -5,7 +5,7 @@
     [x] Planting
     [x] Activities
 
-[ ] Admin plugin
+[ ] Alembic
 
 [x] Pagination
 

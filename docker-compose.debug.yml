@@ -13,7 +13,7 @@ services:
       - 8000:8000
       - 5678:5678
     environment:
-      - DATABASE_URL=postgresql://hello_fastapi:hello_fastapi@db/hello_fastapi_dev
+      - DATABASE_URL=postgresql+asyncpg://hello_fastapi:hello_fastapi@db/hello_fastapi_dev
   db:
     image: postgres:13-alpine
     volumes:

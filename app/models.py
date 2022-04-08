@@ -1,3 +1,4 @@
+import enum
 from typing import Optional, List
 import uuid
 import pydantic
@@ -95,26 +96,36 @@ class ZoneUpdate(Base):
 #endregion
 
 #region Activity
-class NewActivity(Base, table=False):
+class RecurrenceFrequency(str, enum.Enum):
+    daily = "daily"
+    weekly = "weekly"
+    monthly = "monthly"
+    yearly = "yearly"
+
+
+class ActivityBase(Base, table=False):
     description: Optional[str]
     short_description: Optional[str]
 
+    begin: Optional[pydantic.FutureDate]
+    end: Optional[pydantic.FutureDate]
+    recurrence_frequency: Optional[RecurrenceFrequency]
+    recurrence_interval: Optional[int]
+    
+
+
+class NewActivity(ActivityBase, table=False):
     species_id: int
     zone_id: Optional[int]
   
 
-class ActivityUpdate(Base, table=False):
-    description: Optional[str]
-    short_description: Optional[str]
-
+class ActivityUpdate(ActivityBase, table=False):
     species_id: Optional[int]
     zone_id: Optional[int]
 
 
-class Activity(Base, table=True):
+class Activity(ActivityBase, table=True):
     id: int = sql.Field(primary_key=True, nullable=False, index=True)
-    description: Optional[str]
-    short_description: Optional[str]
 
     species_id: int = sql.Field(
         nullable=False,
