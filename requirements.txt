@@ -2,6 +2,7 @@
 asyncpg
 sqlalchemy[asyncio]
 sqlmodel
+alembic
 
 # API Server
 fastapi[all]
