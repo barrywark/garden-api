@@ -9,7 +9,7 @@ fastapi[all]
 uvicorn
 
 # auth
-fastapi-users[sqlalchemy2]
+fastapi-users[sqlalchemy]
 fastapi-users-db-sqlmodel
 oso
 sqlalchemy-oso

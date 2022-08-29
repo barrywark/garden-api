@@ -2,8 +2,8 @@ import typing
 import contextlib
 import pydantic
 import pytest
+from fastapi_users.exceptions import UserAlreadyExists
 
-from fastapi_users.manager import UserAlreadyExists
 from starlette.testclient import TestClient
 
 import app.settings as settings

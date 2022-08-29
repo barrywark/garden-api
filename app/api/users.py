@@ -1,9 +1,10 @@
-from typing import Optional
+import uuid
+from typing import Optional, Any
 
 import fastapi
 
 from fastapi import Depends, Request
-from fastapi_users import BaseUserManager, FastAPIUsers
+from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
@@ -18,7 +19,8 @@ from app.settings import get_settings
 SECRET = get_settings().jwt_secret or "NOT SECRET"
 JWT_LIFETIME_SECONDS = get_settings().jwt_lifetime_seconds
 
-class UserManager(BaseUserManager[models.UserCreateModel, models.User]):
+
+class UserManager(UUIDIDMixin, BaseUserManager[models.UserCreateModel, models.User]):
     """
     UserManager class
     """
@@ -26,18 +28,16 @@ class UserManager(BaseUserManager[models.UserCreateModel, models.User]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
 
-    async def on_after_register(self, user: models.User, 
+    async def on_after_register(self, user: models.User,
                                 request: Optional[Request] = None):
         print(f"User {user.id} has registered.")
 
     async def on_after_forgot_password(
-        self, user: models.User, token: str, request: Optional[Request] = None
-    ):
+            self, user: models.User, token: str, request: Optional[Request] = None):
         print(f"User {user.id} has forgot their password. Reset token: {token}")
 
     async def on_after_request_verify(
-        self, user: models.User, token: str, request: Optional[Request] = None
-    ):
+            self, user: models.User, token: str, request: Optional[Request] = None):
         print(f"Verification requested for user {user.id}. Verification token: {token}")
 
 
@@ -59,17 +59,14 @@ def get_jwt_strategy() -> JWTStrategy:
 
 
 auth_backend = AuthenticationBackend(name="jwt",
-                                    transport=bearer_transport,
-                                    get_strategy=get_jwt_strategy)
+                                     transport=bearer_transport,
+                                     get_strategy=get_jwt_strategy)
 
-fastapi_users = FastAPIUsers(
+fastapi_users = FastAPIUsers[models.User, uuid.UUID](
     get_user_manager,
     (auth_backend,),
-    models.UserModel,
-    models.UserCreateModel,
-    models.UserUpdateModel,
-    models.User,
 )
+
 
 def make_router():
     """
@@ -79,20 +76,28 @@ def make_router():
     router = fastapi.APIRouter()
 
     router.include_router(
-        fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
-    )
+        fastapi_users.get_auth_router(auth_backend),
+        prefix="/auth/jwt",
+        tags=["auth"])
 
-    router.include_router(fastapi_users.get_register_router(), prefix="/auth", tags=["auth"])
+    router.include_router(
+        fastapi_users.get_register_router(models.UserRead, models.UserCreateModel),
+        prefix="/auth",
+        tags=["auth"])
+
     router.include_router(
         fastapi_users.get_reset_password_router(),
         prefix="/auth",
-        tags=["auth"],
-    )
+        tags=["auth"])
+
     router.include_router(
-        fastapi_users.get_verify_router(),
+        fastapi_users.get_verify_router(models.UserRead),
         prefix="/auth",
-        tags=["auth"],
-    )
-    router.include_router(fastapi_users.get_users_router(), prefix="/users", tags=["users"])
+        tags=["auth"])
+
+    router.include_router(
+        fastapi_users.get_users_router(models.UserRead, models.UserUpdateModel),
+        prefix="/users",
+        tags=["users"])
 
     return router
