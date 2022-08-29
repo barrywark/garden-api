@@ -129,3 +129,9 @@ dmypy.json
 .pyre/
 gardenapi.db
 test.db
+/.idea/.gitignore
+/.idea/garden-api.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/vcs.xml
