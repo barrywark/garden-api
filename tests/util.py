@@ -79,7 +79,7 @@ async def create_user(email: str, password: str, is_superuser: bool = False) -> 
             async with get_user_db_context(session) as user_db:
                 async with get_user_manager_context(user_db) as user_manager:
                     user = await user_manager.create(
-                        models.UserCreateModel(
+                        models.UserCreate(
                             email=email, password=password, is_superuser=is_superuser
                         )
                     )

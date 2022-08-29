@@ -19,11 +19,11 @@ class UserRead(fastapi_users.schemas.BaseUser[uuid.UUID]):
     pass
 
 
-class UserCreateModel(fastapi_users.schemas.BaseUserCreate):
+class UserCreate(fastapi_users.schemas.BaseUserCreate):
     pass
 
 
-class UserUpdateModel(fastapi_users.schemas.BaseUserUpdate):
+class UserUpdate(fastapi_users.schemas.BaseUserUpdate):
     pass
 
 

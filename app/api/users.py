@@ -20,7 +20,7 @@ SECRET = get_settings().jwt_secret or "NOT SECRET"
 JWT_LIFETIME_SECONDS = get_settings().jwt_lifetime_seconds
 
 
-class UserManager(UUIDIDMixin, BaseUserManager[models.UserCreateModel, models.User]):
+class UserManager(UUIDIDMixin, BaseUserManager[models.UserCreate, models.User]):
     """
     UserManager class
     """
@@ -81,7 +81,7 @@ def make_router():
         tags=["auth"])
 
     router.include_router(
-        fastapi_users.get_register_router(models.UserRead, models.UserCreateModel),
+        fastapi_users.get_register_router(models.UserRead, models.UserCreate),
         prefix="/auth",
         tags=["auth"])
 
@@ -96,7 +96,7 @@ def make_router():
         tags=["auth"])
 
     router.include_router(
-        fastapi_users.get_users_router(models.UserRead, models.UserUpdateModel),
+        fastapi_users.get_users_router(models.UserRead, models.UserUpdate),
         prefix="/users",
         tags=["users"])
 
