@@ -24,6 +24,7 @@ def get_settings_override() -> settings.Settings:
         database_url="sqlite+aiosqlite://"
     )
 
+
 @pytest.fixture
 async def client() -> typing.AsyncGenerator[TestClient, None]:
     """
@@ -41,21 +42,21 @@ async def client() -> typing.AsyncGenerator[TestClient, None]:
         yield test_client
 
 
-
 def login(test_client: TestClient, email: str, password: str) -> str:
     """
     Return access token for user via /auth/jwt/login
     """
 
-    auth_response = test_client.post('/auth/jwt/login', 
-        data={"username": email, "password": password})
-    
+    auth_response = test_client.post('/auth/jwt/login',
+                                     data={"username": email, "password": password})
+
     assert auth_response.status_code == 200
     token = auth_response.json()['access_token']
 
     return token
 
-def authentication_headers(token: str) -> dict[str,str]:
+
+def authentication_headers(token: str) -> dict[str, str]:
     return {'Authorization': f'Bearer {token}'}
 
 
@@ -91,21 +92,21 @@ async def create_user(email: str, password: str, is_superuser: bool = False) -> 
 
 def make_species(client: TestClient = None, token: str = None):
     species_response = client.post("/species",
-                                    headers=authentication_headers(token),
-                                    json={"name": "species name"})
+                                   headers=authentication_headers(token),
+                                   json={"name": "species name"})
 
     return species_response.json()
 
 
 def make_garden(client: TestClient = None, token: str = None):
     garden_response = client.post("/gardens",
-                                    headers=authentication_headers(token),
-                                    json={"name": "garden name"})
+                                  headers=authentication_headers(token),
+                                  json={"name": "garden name"})
 
     return garden_response.json()
-    
 
-def garden_fixture(client: TestClient = None, token: str = None) -> typing.Tuple[pydantic.UUID4,int]:
+
+def garden_fixture(client: TestClient = None, token: str = None) -> typing.Tuple[pydantic.UUID4, int]:
     """
     [garden_id, species_id]
     """
@@ -120,24 +121,29 @@ def zone_id(client, super_user) -> typing.AsyncGenerator[models.Zone, None]:
     zone_response = client.post("/zones",
                                 headers=authentication_headers(token),
                                 json={"name": "zone name"})
-    
+
     return zone_response.json().get('id')
-    
+
 
 BASIC_USER_EMAIL = 'user@test.com'
 BASIC_USER_PASSWORD = 'NOT SECRET'
+
+
 @pytest.fixture
-async def basic_user()  -> typing.AsyncGenerator[models.User, None]:
+async def basic_user() -> typing.AsyncGenerator[models.User, None]:
     """
     Verified, active, non-superuser User
     """
 
     yield await create_user(email=BASIC_USER_EMAIL, password=BASIC_USER_PASSWORD, is_superuser=False)
 
+
 ALT_USER_EMAIL = 'alt@test.com'
 ALT_USER_PASSWORD = 'NOT SECRET'
+
+
 @pytest.fixture
-async def alt_user()  -> typing.AsyncGenerator[models.User, None]:
+async def alt_user() -> typing.AsyncGenerator[models.User, None]:
     """
     Alternate verified, active, non-superuser User
     """
@@ -147,8 +153,10 @@ async def alt_user()  -> typing.AsyncGenerator[models.User, None]:
 
 SUPER_USER_EMAIL = 'super@test.com'
 SUPER_USER_PASSWORD = 'NOT SECRET'
+
+
 @pytest.fixture
-async def super_user()  -> typing.AsyncGenerator[models.User, None]:
+async def super_user() -> typing.AsyncGenerator[models.User, None]:
     """
     Alternate verified, active, superuser User
     """
